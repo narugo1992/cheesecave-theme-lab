@@ -2,17 +2,18 @@
 
 A prototype for the Theme page of the CheeseCave admin: pick a ready-made light and dark colour set, or give **one brand colour** and get all six colours of the theme back (primary, page background and card, for light and dark).
 
-- **Live page:** https://narugo1992.github.io/cheesecave-theme-lab/ (`index.html`)
+- **Live page:** https://narugo1992.github.io/cheesecave-theme-lab/ (`index.html`): a mock admin Theme page; **Quick setup…** opens the colour dialog.
+- **Previous version:** `previous.html`: the palette-and-slider page before the dialog.
 - **Research version:** https://narugo1992.github.io/cheesecave-theme-lab/research.html: the same with three methods side by side (hand-written rules, Material 3, Ant Design), a twelve-hue sweep and a check against real themes.
 - **Design issue with the research and the plan:** https://github.com/cheesecave/cheesecave-admin/issues/23
 
 Nothing here changes the product.
 
-**The palette** is a lightness (up) and vividness (right) plane in OKLCH at the chosen hue, with a hue strip under it; drag it, or use the arrow keys (Shift for bigger steps). The grey part is colours the screen cannot show at that hue, which is why yellow, green and cyan have a narrower palette than blue or purple.
+**The dialog** has, on the left, 16 recommended colours, then three bars (hue, vividness, lightness, each with its value) and a hex field, and at the bottom the **Dark depth** bar. On the right the Light and Dark demos update as you drag. **Apply** fills the six fields of the page; **Cancel**, Esc or a click outside discards. All controls work with the keyboard; on a phone the dialog fills the screen.
 
 ## What the picker decides for you
 
-The inputs are the brand colour (thirteen colour cards, a colour palette to mix your own, or a hex field) and one slider, **Dark mode depth** (soft dark to deep dark). The rest is fixed, from measurements on 13 real themes whose files were read:
+The inputs are the brand colour (16 recommended colours, three bars, or a hex field) and one slider, **Dark mode depth** (soft dark to deep dark). The rest is fixed, from measurements on 13 real themes whose files were read:
 
 | Decision | Choice | Why |
 |---|---|---|

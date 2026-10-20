@@ -122,88 +122,76 @@ input[type="range"] { width: 100%; accent-color: var(--ink) }
 @media (max-width: 560px) { .tiles { grid-template-columns: 1fr } .hex { grid-template-columns: 1fr } .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } .slotrow { grid-template-columns: 1fr 1fr 1fr } .slotrow .d { display: none } body { padding-bottom: 190px } }
 @media (prefers-reduced-motion: no-preference) { .card { transition: border-color .12s } }
 
-/* simplified one-colour tab */
-.pickrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
-.cc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
-.cc[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
-.cc .nm2 { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500 }
-.cc .nm2 i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); flex: none }
-.cc .hx { font-family: var(--mono); font-size: 11px; color: var(--muted) }
-.custom { cursor: default }
-.custom .row { gap: 6px }
-.custom input[type="color"] { width: 38px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); cursor: pointer }
-.custom input[type="text"] { font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 8px; width: 100%; min-width: 0 }
-.custom input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
-.result { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px }
-.status { font-size: 13px; margin: 0 }
-.status.ok::before { content: "✓ "; color: var(--ok) } .status.note { color: var(--warn) }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
-details.fold { border-top: 1px solid var(--line); padding-top: 10px } details.fold summary { cursor: pointer; font-weight: 500; font-size: 13px }
-.six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px }
-.six .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .six .cell span { font-size: 11px; color: var(--muted) } .six .cell .in { display: flex; gap: 6px; align-items: center }
-.six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px } .six input[type="text"][aria-invalid="true"] { border-color: var(--bad) } .six .edited input { border-color: var(--ink) }
-.rep { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px } .rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 } .rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em } .rep td.num { font-family: var(--mono); text-align: right } .good { color: var(--ok) } .poor { color: var(--bad) }
-.decided { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; max-width: 90ch } .decided li { margin-bottom: 4px }
-.micro .tile .btn { font-size: 0; padding: 11px 0; border-radius: 6px }
-/* palette: a lightness / vividness plane at the chosen hue, plus a hue strip */
-.mix { margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 20px; align-items: start }
-.mix .t, .depth .t { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px }
-.plane { position: relative; width: 100%; aspect-ratio: 8 / 5; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); cursor: crosshair; touch-action: none; background: var(--chip) }
-.plane canvas { width: 100%; height: 100%; display: block }
-.plane i { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #000, 0 1px 4px rgba(0,0,0,.4); transform: translate(-50%, -50%); pointer-events: none }
-.plane:focus-visible, .mix input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
-.hueTrack { height: 12px; border-radius: 6px; margin: 12px 0 6px; border: 1px solid var(--line) }
-.mix input[type="range"], .depth input[type="range"] { width: 100%; accent-color: var(--ink) }
-.mixrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px }
-.mix input[type="color"] { width: 44px; height: 38px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer }
-.mix input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 120px }
-.mix input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
-.mixside p { margin: 0 0 10px; color: var(--muted); font-size: 13px; max-width: 46ch }
-.mixside .big { font-family: var(--mono); font-size: 22px; color: var(--ink); margin-bottom: 4px }
-.depth { padding-top: 2px } .depth .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
-@media (max-width: 760px) { .mix { grid-template-columns: 1fr } }
+/* the faux admin Theme page */
+.admin { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px }
+.admin h2 { margin: 0; font-size: 20px } .admin h3 { margin: 0; font-size: 15px }
+.between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px }
+.fcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.fcard h4 { margin: 0; font-size: 14px }
+.fld { display: flex; flex-direction: column; gap: 4px } .fld label { font-size: 12.5px; font-weight: 500 }
+.fld .ctl { display: flex; gap: 10px; align-items: center }
+.fld input[type="color"] { width: 44px; height: 38px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; flex: none }
+.fld input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100% }
+.fld input[type="text"][aria-invalid="true"], .hexrow input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.primary { font: inherit; font-weight: 500; background: var(--pick); color: var(--pick-ink); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer }
+.primary:disabled { opacity: .4; cursor: default }
+.secondary { font: inherit; font-weight: 500; background: transparent; color: var(--ink); border: 1px solid var(--ink); border-radius: 8px; padding: 7px 13px; cursor: pointer }
+.primary:focus-visible, .secondary:focus-visible, .sw16:focus-visible, .ghost:focus-visible, .x:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.dirty { font-size: 12.5px; color: var(--warn) }
+/* the dialog */
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--surface); color: var(--ink); width: min(980px, calc(100vw - 24px)); max-height: calc(100vh - 24px); box-shadow: 0 24px 70px rgba(0,0,0,.35) }
+dialog::backdrop { background: rgba(8, 10, 14, .55) }
+dialog[open] { display: flex; flex-direction: column }
+.dh { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line) }
+.dh h2 { margin: 0; font-size: 17px } .dh .x { font: inherit; font-size: 20px; line-height: 1; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px }
+.db { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; padding: 18px; overflow: auto }
+.left { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.right { display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.sec { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px }
+.matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.sw16 { aspect-ratio: 1.25; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; position: relative; display: flex; align-items: flex-end; padding: 5px 6px; font: inherit; font-size: 11px; font-weight: 500; text-align: left }
+.sw16[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink) }
+.sw16[aria-pressed="true"]::after { content: "✓"; position: absolute; top: 4px; right: 7px; font-size: 13px }
+.bars { display: flex; flex-direction: column; gap: 12px }
+.bar3 { display: grid; grid-template-columns: 82px minmax(0, 1fr) 56px; gap: 10px; align-items: center }
+.bar3 label { font-size: 13px; font-weight: 500 } .bar3 output { font-family: var(--mono); font-size: 12.5px; text-align: right }
+input[type="range"].track { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--track, var(--chip)); margin: 0; cursor: pointer }
+input[type="range"].track::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--cur, #888); border: 3px solid #fff; box-shadow: 0 0 0 1.5px #000, 0 1px 4px rgba(0,0,0,.4) }
+input[type="range"].track::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--cur, #888); border: 3px solid #fff; box-shadow: 0 0 0 1.5px #000 }
+input[type="range"].track:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px }
+.hexrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.hexrow input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 112px }
+.hexrow .cur { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line) }
+.hexrow .ok { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 160px }
+.depthbar { border-top: 1px solid var(--line); padding-top: 14px }
+.depthbar .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px }
+.pvhead { font-size: 12px; color: var(--muted); margin-bottom: 6px }
+.pvhex { font-family: var(--mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px }
+.pvhex .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); margin-right: 4px }
+.df { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line); flex-wrap: wrap }
+.df .grp { display: flex; gap: 8px; align-items: center }
+.df .note { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 200px }
+.df .note.warn { color: var(--warn) }
+.pv .tile { padding: 14px } .pv .tile .pc { padding: 18px } .pv .tile h4 { font-size: 19px }
+@media (max-width: 760px) { .cols2 { grid-template-columns: 1fr } .db { grid-template-columns: 1fr } dialog { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0 } .bar3 { grid-template-columns: 70px minmax(0, 1fr) 48px } }
 .foot2 { margin-top: 30px; color: var(--muted); font-size: 13px }
-@media (max-width: 560px) { .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
 </style>
 <div class="wrap">
   <h1>Site colour picker</h1>
-  <p class="lede">Colours for the visitor site's theme. <b>Presets</b>: <span id="count"></span> ready-made light and dark sets. <b>One colour</b>: pick a single brand colour and get all six colours back (primary, page background and card, for light and dark). Every tile is drawn with the rules of the Preview on the admin Site &gt; Theme page.</p>
+  <p class="lede">A prototype of the colour setup on the admin Site &gt; Theme page. <b>Theme page</b> is a mock of that page: press <b>Quick setup…</b> to open the colour dialog, change things, then <b>Apply</b> to fill the six colour fields. <b>Presets</b> lists 58 ready-made light and dark sets. Every tile is drawn with the rules of the real Preview.</p>
   <div class="tabs" role="tablist" aria-label="Sections">
-    <button class="tab" role="tab" id="t-lab" aria-selected="true" aria-controls="tab-lab" type="button">One colour</button>
+    <button class="tab" role="tab" id="t-admin" aria-selected="true" aria-controls="tab-admin" type="button">Theme page</button>
     <button class="tab" role="tab" id="t-presets" aria-selected="false" aria-controls="tab-presets" type="button">Presets</button>
   </div>
 
-  <section id="tab-lab" role="tabpanel" aria-labelledby="t-lab">
-    <p class="small">Pick one of these, mix your own in the palette below, or type a hex. Each card already shows what you would get.</p>
-    <div class="pickrow" id="pickrow"></div>
-    <div class="mix">
-      <div>
-        <span class="t">Mix your own</span>
-        <div class="plane" id="plane" tabindex="0" role="application" aria-label="Colour palette. Arrow keys change lightness and vividness." aria-describedby="planeHint"><canvas id="planeCv" width="320" height="200"></canvas><i id="planeDot"></i></div>
-        <div class="hueTrack" id="hueTrack"></div>
-        <input type="range" id="hue" min="0" max="359" step="1" aria-label="Hue">
-      </div>
-      <div class="mixside">
-        <div class="big" id="bigHex"></div>
-        <p id="planeHint">Drag in the palette: to the right is more vivid, up is lighter. The strip below it sets the hue. Arrow keys work too (Shift for bigger steps).</p>
-        <div class="mixrow"><input type="color" id="pickc" aria-label="System colour picker"><input type="text" id="hexin" maxlength="7" spellcheck="false" aria-label="Brand colour as hex"></div>
-        <p class="hint" id="oklchHint" style="margin-top:10px"></p>
-      </div>
-    </div>
-    <div class="result">
-      <div class="tiles" id="resTiles"></div>
-      <div class="depth"><label class="t" for="depth">Dark mode depth</label><input type="range" id="depth" min="0" max="100" value="0" aria-label="Dark mode depth, soft to deep"><div class="ends"><span>Soft dark</span><span>Deep dark</span></div></div>
-      <p class="status" id="status"></p>
-      <div class="actions"><button class="primary" id="copyList" type="button">Copy the six colours</button><button class="ghost" id="resetEdits" type="button" hidden>Undo my edits</button></div>
-      <details class="fold"><summary>Fine-tune the six colours</summary><div class="six" id="six"></div><p class="small" style="margin-top:8px">Edit any of them; the tiles follow.</p></details>
-      <details class="fold"><summary>Readability checks</summary><div id="report"></div></details>
-      <details class="fold"><summary>What is decided for you, and why</summary>
-        <ul class="decided">
-          <li><b>Your colour is the light primary, unchanged.</b></li>
-          <li><b>Dark primary:</b> the same hue and vividness, made lighter only when it is too dark for a dark page (lightness floor 0.68). In 13 real themes the dark accent is at the median only 0.12 lighter than the light one, and four use the same colour in both modes.</li>
-          <li><b>Page and card:</b> near white in light mode, near black in dark mode, with a faint tint of your hue. The five tint styles the earlier prototype offered differed by at most 0.025 (barely visible), so they are not a choice. The dark page starts at lightness 0.23, the median of the 13 real themes (their range is 0.15 to 0.33), and the Dark mode depth slider takes it down to 0.16.</li>
-          <li><b>One method:</b> hand-written rules in OKLCH, which came closest to the real themes (mean distance 0.041 against 0.067 for Material 3 and 0.064 for Ant Design). The comparison is on the research page.</li>
-        </ul></details>
+  <section id="tab-admin" role="tabpanel" aria-labelledby="t-admin">
+    <div class="admin">
+      <div><h2>Theme</h2><p class="small" style="margin:4px 0 0">Set the visitor site's default mode and colors for light and dark appearances.</p></div>
+      <div class="between"><h3>Colors</h3><button class="secondary" id="openQuick" type="button">Quick setup…</button></div>
+      <div class="cols2" id="fields"></div>
+      <div><h3 style="margin-bottom:10px">Preview</h3><div class="tiles" id="pagePreview"></div></div>
+      <div class="between"><span class="dirty" id="dirty" role="status"></span><span class="row" style="display:flex;gap:8px"><button class="ghost" id="restore" type="button" hidden>Restore</button><button class="primary" id="saveBtn" type="button" disabled>Save</button></span></div>
     </div>
   </section>
 
@@ -212,8 +200,37 @@ details.fold { border-top: 1px solid var(--line); padding-top: 10px } details.fo
     <div class="grid" id="grid"></div>
     <div class="none" id="empty" hidden>Nothing picked yet. Press Pick on a card.</div>
   </section>
-  <p class="foot2">Research version with the three methods side by side, a twelve-hue sweep and the check against real themes: <a href="research.html">research.html</a>. Design issue and data: <a href="https://github.com/cheesecave/cheesecave-admin/issues/23" target="_blank" rel="noopener noreferrer">cheesecave-admin#23</a>.</p>
+  <p class="foot2">Earlier versions: <a href="previous.html">palette and slider page</a> · <a href="research.html">research version with the three methods</a>. Design issue and data: <a href="https://github.com/cheesecave/cheesecave-admin/issues/23" target="_blank" rel="noopener noreferrer">cheesecave-admin#23</a>.</p>
 </div>
+
+<dialog id="dlg" aria-labelledby="mtitle">
+  <div class="dh"><h2 id="mtitle">Quick colour setup</h2><button class="x" id="mclose" type="button" aria-label="Close">×</button></div>
+  <div class="db">
+    <div class="left">
+      <div><span class="sec">Recommended colours</span><div class="matrix" id="matrix" role="group" aria-label="Recommended colours"></div></div>
+      <div>
+        <span class="sec">Your colour</span>
+        <div class="bars">
+          <div class="bar3"><label for="rh">Hue</label><input class="track" type="range" id="rh" min="0" max="359" step="1"><output id="oh" for="rh"></output></div>
+          <div class="bar3"><label for="rv">Vividness</label><input class="track" type="range" id="rv" min="0" max="100" step="1"><output id="ov" for="rv"></output></div>
+          <div class="bar3"><label for="rl">Lightness</label><input class="track" type="range" id="rl" min="20" max="97" step="1"><output id="ol" for="rl"></output></div>
+        </div>
+        <div class="hexrow" style="margin-top:12px"><span class="cur" id="cur"></span><input type="text" id="mhex" maxlength="7" spellcheck="false" aria-label="Colour as hex"><span class="ok" id="mhint"></span></div>
+      </div>
+      <div class="depthbar">
+        <div class="bar3"><label for="rd">Dark depth</label><input class="track" type="range" id="rd" min="0" max="100" step="1"><output id="od" for="rd"></output></div>
+        <div class="ends"><span>Soft dark</span><span>Deep dark</span></div>
+      </div>
+    </div>
+    <div class="right pv">
+      <div><div class="pvhead"><b>Light</b></div><div id="pvLight"></div><div class="pvhex" id="hxLight"></div></div>
+      <div><div class="pvhead"><b>Dark</b></div><div id="pvDark"></div><div class="pvhex" id="hxDark"></div></div>
+    </div>
+  </div>
+  <div class="df"><span class="note" id="mstatus"></span><span class="grp"><span class="toast" id="mtoast" role="status"></span><button class="ghost" id="mcopy" type="button">Copy the six</button><button class="secondary" id="mcancel" type="button">Cancel</button><button class="primary" id="mapply" type="button">Apply</button></span></div>
+  <textarea class="out" id="mout" aria-label="Copied text" readonly hidden style="margin:0 18px 14px;width:calc(100% - 36px);height:110px"></textarea>
+</dialog>
+
 <div class="tray" id="tray" hidden>
   <div class="tray-in">
     <b id="tlabel">Picked</b><div class="picked" id="picked"></div><span class="toast" id="toast" role="status"></span>
@@ -295,96 +312,86 @@ function renderPresets() {
 }
 const presetText = (p) => `${p.name} [${p.id}]\n  light: primary ${p.light.primary}, background ${p.light.background}, card ${p.light.card}\n  dark:  primary ${p.dark.primary}, background ${p.dark.background}, card ${p.dark.card}`;
 
-// ---------- One colour (the simplified tab) ----------
-// Everything except the brand colour is decided: see "What is decided for you".
-function derive(primary, depth = lab.depth / 100) {
+// ---------- Theme page (mock) + colour dialog ----------
+// Everything except the main colour is decided by derive(): see issue cheesecave-admin#23.
+function derive(primary, depth) {
   const { L, C, h } = toOklch(primary), Ld = Math.max(L, 0.68), bgL = 0.23 - depth * 0.07, cardL = bgL + 0.05;
   return { light: { primary, background: oklch2hex(0.96, 0.006, h), card: "#ffffff" }, dark: { primary: oklch2hex(Ld, C, h), background: oklch2hex(bgL, 0.01, h), card: oklch2hex(cardL, 0.012, h) } };
 }
-const KEYS = [["light", "primary"], ["light", "background"], ["light", "card"], ["dark", "primary"], ["dark", "background"], ["dark", "card"]];
 const KEYNAME = { primary_light: ["light", "primary"], background_light: ["light", "background"], card_light: ["light", "card"], primary_dark: ["dark", "primary"], background_dark: ["dark", "background"], card_dark: ["dark", "card"] };
-const NAMED = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Pink", "#db2777"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
-const lab = { brand: "#2563eb", L: 0, C: 0, h: 0, depth: 0, edits: {} };
-function current() { const g = derive(lab.brand), r = { light: { ...g.light }, dark: { ...g.dark } }; for (const [k, v] of Object.entries(lab.edits)) { const [m, s] = KEYNAME[k]; r[m][s] = v } return r }
-function renderPick() {
-  $("pickrow").innerHTML = NAMED.map(([n, h]) => `<button type="button" class="cc" data-name="${h}" aria-pressed="${lab.brand === h}"><span class="nm2"><i style="background:${h}"></i>${n}</span>${tiles(derive(h), "micro")}<span class="hx">${h}</span></button>`).join("");
+const FIELDS = [["Light", ["primary_light", "Primary"], ["background_light", "Page background"], ["card_light", "Card"]], ["Dark", ["primary_dark", "Primary"], ["background_dark", "Page background"], ["card_dark", "Card"]]];
+const RECO = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Purple", "#9333ea"], ["Fuchsia", "#c026d3"], ["Pink", "#db2777"], ["Rose", "#e11d48"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
+const flat = (s) => Object.fromEntries(Object.entries(KEYNAME).map(([k, [m, x]]) => [k, s[m][x]]));
+const unflat = (v) => { const r = { light: {}, dark: {} }; for (const [k, [m, x]] of Object.entries(KEYNAME)) r[m][x] = v[k]; return r };
+let saved = flat(derive("#2563eb", 0)), vals = { ...saved };
+
+// the page behind the dialog
+$("fields").innerHTML = FIELDS.map(([mode, ...fs]) => `<div class="fcard"><h4>${mode} mode</h4>${fs.map(([k, label]) => `<div class="fld"><label for="f-${k}">${label}</label><div class="ctl"><input type="color" id="c-${k}" aria-label="${label}, ${mode} mode, colour picker"><input type="text" id="f-${k}" maxlength="7" spellcheck="false"></div></div>`).join("")}</div>`).join("");
+function renderPage() {
+  for (const k of Object.keys(KEYNAME)) { $("c-" + k).value = vals[k]; if (document.activeElement !== $("f-" + k)) $("f-" + k).value = vals[k] }
+  const s = unflat(vals); $("pagePreview").innerHTML = tile("light", s.light) + tile("dark", s.dark);
+  const dirty = Object.keys(vals).some((k) => vals[k] !== saved[k]);
+  $("saveBtn").disabled = !dirty; $("restore").hidden = !dirty; if (dirty) $("dirty").textContent = "Unsaved changes";
 }
-// ---------- the palette: lightness (up) and vividness (right) at the chosen hue, in OKLCH ----------
-const PL = { Lmin: 0.2, Lmax: 0.97, Cmax: 0.32 };
-const cmaxCache = new Map();
-function planeCmax(h) { const k = Math.round(h * 2) / 2; if (!cmaxCache.has(k)) { let m = 0; for (let L = PL.Lmin; L <= PL.Lmax; L += 0.01) m = Math.max(m, maxChroma(L, k)); cmaxCache.set(k, Math.min(0.37, Math.max(0.1, m * 1.04))) } return cmaxCache.get(k) }
-let planeDrawn = null;
-function drawPlane() {
-  const cv = $("planeCv"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, h = Math.round(lab.h * 2) / 2;
-  if (planeDrawn === h) return; planeDrawn = h;
-  const img = ctx.createImageData(W, H), dark = getComputedStyle(document.documentElement).getPropertyValue("--chip") || "#e9ebef";
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const L = PL.Lmax - (y / (H - 1)) * (PL.Lmax - PL.Lmin), C = (x / (W - 1)) * planeCmax(h), v = fromOklch(L, C, h), i = (y * W + x) * 4;
-    if (inGamut(v)) { const hx = rgb2hex(v), r = rgb(hx); img.data[i] = r[0]; img.data[i + 1] = r[1]; img.data[i + 2] = r[2]; img.data[i + 3] = 255 } else { img.data[i + 3] = 0 }
-  }
-  ctx.clearRect(0, 0, W, H); ctx.putImageData(img, 0, 0);
+
+// the dialog: state is the main colour in OKLCH plus the dark depth
+const lab = { L: 0.55, C: 0.2, h: 260, depth: 0 };
+const labHex = () => oklch2hex(lab.L, lab.C, lab.h);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+$("matrix").innerHTML = RECO.map(([n, hex]) => `<button type="button" class="sw16" data-reco="${hex}" aria-pressed="false" style="background:${hex};color:${contrastText(hex)};text-shadow:none">${n}</button>`).join("");
+const grad = (stops) => `linear-gradient(90deg, ${stops.join(", ")})`;
+function renderModal() {
+  const brand = labHex(), set = derive(brand, lab.depth / 100), cmax = maxChroma(lab.L, lab.h), vivid = cmax ? Math.round(clamp(lab.C / cmax, 0, 1) * 100) : 0, Cd = Math.max(lab.C, 0.1);
+  const bar = (id, out, v, text, stops, cur) => { const r = $(id); r.value = v; r.style.setProperty("--track", grad(stops)); r.style.setProperty("--cur", cur); r.setAttribute("aria-valuetext", text); $(out).textContent = text };
+  bar("rh", "oh", Math.round(lab.h) % 360, Math.round(lab.h) % 360 + "°", Array.from({ length: 13 }, (_, i) => oklch2hex(lab.L, Cd, i * 30)), brand);
+  bar("rv", "ov", vivid, vivid + "%", [oklch2hex(lab.L, 0, lab.h), oklch2hex(lab.L, 1, lab.h)], brand);
+  bar("rl", "ol", Math.round(lab.L * 100), String(Math.round(lab.L * 100)), Array.from({ length: 9 }, (_, i) => oklch2hex(0.2 + i * 0.0963, lab.C, lab.h)), brand);
+  const soft = derive(brand, 0).dark.background, deep = derive(brand, 1).dark.background;
+  bar("rd", "od", lab.depth, lab.depth + "%", [soft, deep], set.dark.background);
+  $("cur").style.background = brand; if (document.activeElement !== $("mhex")) { $("mhex").value = brand; $("mhex").setAttribute("aria-invalid", "false") }
+  document.querySelectorAll(".sw16").forEach((b) => b.setAttribute("aria-pressed", dE(brand, b.dataset.reco) < 0.012));
+  $("pvLight").innerHTML = tile("light", set.light); $("pvDark").innerHTML = tile("dark", set.dark);
+  $("hxLight").innerHTML = hexRows(set.light); $("hxDark").innerHTML = hexRows(set.dark);
+  const weak = ["light", "dark"].filter((m) => ratio(set[m].primary, set[m].card) < 3);
+  $("mstatus").className = "note" + (weak.length ? " warn" : "");
+  $("mstatus").textContent = weak.length ? `This colour is pale on the card in ${weak.join(" and ")} mode, so the site darkens link text a little.` : "Fills all six fields; you can still edit each one afterwards.";
+  $("mhint").textContent = lab.C > cmax + 0.002 ? "Too vivid for this lightness; shown at the closest colour." : "";
 }
-function renderMix() {
-  drawPlane();
-  const dot = $("planeDot"), cl = Math.min(PL.Lmax, Math.max(PL.Lmin, lab.L)), cc = Math.min(planeCmax(lab.h), Math.max(0, Math.min(lab.C, maxChroma(lab.L, lab.h))));
-  dot.style.left = (cc / planeCmax(lab.h)) * 100 + "%"; dot.style.top = ((PL.Lmax - cl) / (PL.Lmax - PL.Lmin)) * 100 + "%"; dot.style.background = lab.brand;
-  $("hue").value = Math.round(lab.h);
-  $("hueTrack").style.background = `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => oklch2hex(lab.L, Math.min(lab.C, 0.2), i * 30)).join(",")})`;
-  $("bigHex").textContent = lab.brand; $("pickc").value = lab.brand;
-  if (document.activeElement !== $("hexin")) { $("hexin").value = lab.brand; $("hexin").setAttribute("aria-invalid", "false") }
-  const eff = Math.min(lab.C, maxChroma(lab.L, lab.h));
-  $("oklchHint").textContent = `Hue ${Math.round(lab.h)}°, lightness ${lab.L.toFixed(2)}, vividness ${eff.toFixed(2)}. Yellow, green and cyan cannot be as vivid as blue or purple at the same lightness, so their palette is narrower.`;
-  $("plane").setAttribute("aria-valuetext", `lightness ${lab.L.toFixed(2)}, vividness ${eff.toFixed(2)}`);
+function setFromHex(hex) { const o = toOklch(hex); lab.L = o.L; lab.C = o.C; lab.h = o.h; renderModal() }
+function openDialog() {
+  setFromHex(vals.primary_light);
+  lab.depth = Math.round(clamp((0.23 - toOklch(vals.background_dark).L) / 0.07, 0, 1) * 100);
+  $("mout").hidden = true; renderModal(); $("dlg").showModal();
 }
-function setLCh(L, C, h) { lab.L = L; lab.C = C; lab.h = h; lab.brand = oklch2hex(L, C, h); lab.edits = {}; refresh() }
-function refresh() { renderPick(); renderResult(); renderMix() }
-function renderResult() {
-  const r = current();
-  $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark);
-  const labels = { primary: "Primary", background: "Page background", card: "Card" };
-  $("six").innerHTML = KEYS.map(([m, s]) => { const k = `${s}_${m}`, edited = k in lab.edits; return `<div class="cell ${edited ? "edited" : ""}"><span>${m === "light" ? "Light" : "Dark"} · ${labels[s]}</span><div class="in"><i class="sw" style="background:${r[m][s]}"></i><input type="text" data-key="${k}" value="${r[m][s]}" maxlength="7" spellcheck="false" aria-label="${m} ${labels[s]}"></div></div>` }).join("");
-  $("resetEdits").hidden = !Object.keys(lab.edits).length;
-  const rows = (m) => { const t = r[m], p = palette(t); return { text: ratio(p.text, t.background), card: ratio(p.cardText, t.card), btn: ratio(p.btn, t.primary), link: ratio(p.link, t.card), raw: ratio(t.primary, t.card) } };
-  const L = rows("light"), D = rows("dark");
-  const darkened = ["light", "dark"].filter((m) => (m === "light" ? L : D).raw < 3);
-  $("status").className = "status " + (darkened.length ? "note" : "ok");
-  $("status").textContent = darkened.length ? `Text, buttons and links are readable in both modes. In ${darkened.join(" and ")} mode the site darkens link text a little, because this colour is pale on the card.` : "Text, buttons and links are readable in both modes.";
-  const cell = (v) => `<td class="num ${v >= 4.5 ? "good" : "poor"}">${v.toFixed(2)} ${v >= 4.5 ? "✓" : "✗"}</td>`;
-  $("report").innerHTML = `<table class="rep"><thead><tr><th>Check (needs 4.5)</th><th>Light</th><th>Dark</th></tr></thead><tbody><tr><td>Text on the page</td>${cell(L.text)}${cell(D.text)}</tr><tr><td>Text on the card</td>${cell(L.card)}${cell(D.card)}</tr><tr><td>Button text on the primary</td>${cell(L.btn)}${cell(D.btn)}</tr><tr><td>Link text on the card, after the site adjusts it</td>${cell(L.link)}${cell(D.link)}</tr><tr><td>Primary as it is, on the card (information)</td><td class="num">${L.raw.toFixed(2)}</td><td class="num">${D.raw.toFixed(2)}</td></tr></tbody></table>`;
-}
-const setBrand = (hex) => { const o = toOklch(hex); lab.brand = hex.toLowerCase(); lab.L = o.L; lab.C = o.C; lab.h = o.h; lab.edits = {}; refresh() };
-function renderLab() { refresh() }
+const draftText = () => { const v = flat(derive(labHex(), lab.depth / 100)); return Object.keys(v).map((k) => `${k}: ${v[k]}`).join("\n") };
 
 // ---------- events ----------
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
-  if (t.classList.contains("tab")) { const lb = t.id === "t-lab"; $("t-presets").setAttribute("aria-selected", !lb); $("t-lab").setAttribute("aria-selected", lb); $("tab-presets").hidden = lb; $("tab-lab").hidden = !lb; $("tray").hidden = lb; return }
+  const t = e.target.closest("button, a"); if (e.target === $("dlg")) $("dlg").close(); if (!t || t.tagName === "A") return;
+  if (t.classList.contains("tab")) { const ad = t.id === "t-admin"; $("t-admin").setAttribute("aria-selected", ad); $("t-presets").setAttribute("aria-selected", !ad); $("tab-admin").hidden = !ad; $("tab-presets").hidden = ad; $("tray").hidden = ad; return }
   if (t.dataset.f) { family = t.dataset.f; renderPresets() }
   else if (t.dataset.pick) { picks.has(t.dataset.pick) ? picks.delete(t.dataset.pick) : picks.add(t.dataset.pick); savePicks(); renderPresets() }
   else if (t.dataset.unpick) { picks.delete(t.dataset.unpick); savePicks(); renderPresets() }
   else if (t.dataset.copy) { const p = PRESETS.find((x) => x.id === t.dataset.copy); copyText(presetText(p), p.name) }
   else if (t.id === "copy") copyText(`Picked presets (${picks.size}):\n` + PRESETS.filter((p) => picks.has(p.id)).map(presetText).join("\n"), "Picks")
   else if (t.id === "clear") { picks.clear(); savePicks(); renderPresets() }
-  else if (t.dataset.name) setBrand(t.dataset.name)
-  else if (t.id === "resetEdits") { lab.edits = {}; renderResult() }
-  else if (t.id === "copyList") { const r = current(); copyText(Object.entries(KEYNAME).map(([k, [m, s]]) => `${k}: ${r[m][s]}`).join("\n"), "The six colours") }
+  else if (t.id === "openQuick") openDialog()
+  else if (t.id === "mclose" || t.id === "mcancel") $("dlg").close()
+  else if (t.dataset.reco) setFromHex(t.dataset.reco)
+  else if (t.id === "mapply") { vals = flat(derive(labHex(), lab.depth / 100)); renderPage(); $("dlg").close(); $("openQuick").focus() }
+  else if (t.id === "mcopy") { const s = draftText(); navigator.clipboard.writeText(s).then(() => { $("mout").hidden = true; $("mtoast").textContent = "Copied"; setTimeout(() => { $("mtoast").textContent = "" }, 2000) }, () => { $("mout").hidden = false; $("mout").value = s; $("mout").select() }) }
+  else if (t.id === "saveBtn") { saved = { ...vals }; renderPage(); $("dirty").textContent = "Saved (demo: nothing is sent anywhere)" }
+  else if (t.id === "restore") { vals = { ...saved }; renderPage() }
 });
 document.addEventListener("input", (e) => { const i = e.target;
-  if (i.id === "pickc") setBrand(i.value);
-  else if (i.id === "hexin") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) setBrand(v) }
-  else if (i.id === "hue") setLCh(lab.L, lab.C, +i.value)
-  else if (i.id === "depth") { lab.depth = +i.value; lab.edits = {}; renderPick(); renderResult() }
-  else if (i.dataset && i.dataset.key) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.edits[i.dataset.key] = v.toLowerCase(); const r = current(), [m, s2] = KEYNAME[i.dataset.key]; i.closest(".cell").classList.add("edited"); i.previousElementSibling.style.background = r[m][s2]; $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark); $("resetEdits").hidden = false } } });
-// the palette: pointer and keyboard
-const planePoint = (e) => { const r = $("plane").getBoundingClientRect(), x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)); return { L: PL.Lmax - y * (PL.Lmax - PL.Lmin), C: x * planeCmax(lab.h) } };
-let dragging = false;
-$("plane").addEventListener("pointerdown", (e) => { dragging = true; $("plane").setPointerCapture(e.pointerId); $("plane").focus(); const p = planePoint(e); setLCh(p.L, p.C, lab.h) });
-$("plane").addEventListener("pointermove", (e) => { if (dragging) { const p = planePoint(e); setLCh(p.L, p.C, lab.h) } });
-const stop = () => { dragging = false }; $("plane").addEventListener("pointerup", stop); $("plane").addEventListener("pointercancel", stop);
-$("plane").addEventListener("keydown", (e) => { const k = e.key, big = e.shiftKey ? 5 : 1; let L = lab.L, C = Math.min(lab.C, maxChroma(lab.L, lab.h));
-  if (k === "ArrowUp") L += 0.01 * big; else if (k === "ArrowDown") L -= 0.01 * big; else if (k === "ArrowRight") C += 0.005 * big; else if (k === "ArrowLeft") C -= 0.005 * big; else return;
-  e.preventDefault(); setLCh(Math.min(PL.Lmax, Math.max(PL.Lmin, L)), Math.min(planeCmax(lab.h), Math.max(0, C)), lab.h) });
-$("count").textContent = PRESETS.length;
-setBrand(lab.brand); renderPresets();
+  if (i.id === "rh") { lab.h = +i.value; renderModal() }
+  else if (i.id === "rv") { lab.C = (+i.value / 100) * maxChroma(lab.L, lab.h); renderModal() }
+  else if (i.id === "rl") { lab.L = +i.value / 100; renderModal() }
+  else if (i.id === "rd") { lab.depth = +i.value; renderModal() }
+  else if (i.id === "mhex") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) setFromHex(v) }
+  else if (i.id.startsWith("c-")) { vals[i.id.slice(2)] = i.value.toLowerCase(); renderPage() }
+  else if (i.id.startsWith("f-")) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { vals[i.id.slice(2)] = v.toLowerCase(); renderPage() } } });
+$("dlg").addEventListener("close", () => { $("mout").hidden = true });
+renderPage(); renderPresets(); $("tray").hidden = true;
 
 </script>
