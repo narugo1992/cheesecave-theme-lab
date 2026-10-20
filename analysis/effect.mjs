@@ -1,0 +1,14 @@
+import { rules, STYLES } from "./algos.mjs";
+import { oklch2hex, dE } from "./oklch.mjs";
+const hues = Array.from({ length: 12 }, (_, i) => i * 30), brands = hues.map((h) => oklch2hex(0.58, 0.15, h));
+const slots = [["light", "background"], ["dark", "background"], ["dark", "card"]];
+const stat = (name, fa, fb) => { const per = slots.map(([m, k]) => { const d = brands.map((b) => dE(fa(b)[m][k], fb(b)[m][k])); return `${m}.${k}: max ${Math.max(...d).toFixed(3)}, median ${[...d].sort((x, y) => x - y)[6].toFixed(3)}` }); console.log(name.padEnd(36), per.join(" | ")); };
+console.log("How different are the choices (OKLab distance; ~0.02 barely visible, ~0.05 clearly different), over 12 hues");
+for (const s of ["cool", "warm", "neutral", "ide"]) stat(`style tinted vs ${s}`, (b) => rules(b, { style: "tinted" }), (b) => rules(b, { style: s }));
+stat("style cool vs warm (the two furthest)", (b) => rules(b, { style: "cool" }), (b) => rules(b, { style: "warm" }));
+stat("dark depth 0 vs 1 (the slider's range)", (b) => rules(b, { depth: 0 }), (b) => rules(b, { depth: 1 }));
+stat("dark depth 0 vs 0.5", (b) => rules(b, { depth: 0 }), (b) => rules(b, { depth: 0.5 }));
+console.log("\nverified themes' dark page lightness range (so how far real themes spread):");
+import { PRESETS } from "./presets.mjs"; import { toOklch } from "./oklch.mjs";
+const L = PRESETS.filter((p) => p.prov === "official").map((p) => toOklch(p.dark.background).L).sort((a, b) => a - b);
+console.log("  min", L[0].toFixed(2), "p25", L[3].toFixed(2), "median", L[6].toFixed(2), "p75", L[9].toFixed(2), "max", L[12].toFixed(2), "(depth 0 = 0.23, depth 1 = 0.16)");

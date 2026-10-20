@@ -1,0 +1,1104 @@
+<title>Site Colour Lab (research)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: two tabs. Presets is a swatch book of cards, each with the light and the dark tile of the admin Theme page. Lab is a control column and a result column: inputs on the left, the derived six colours and tiles on the right, then a comparison of methods, a hue sweep and a check against real themes. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --ink: #16181d; --muted: #5a616d; --line: #dde0e6; --chip: #e9ebef; --pick: #16181d; --pick-ink: #ffffff; --warn: #8a5a00; --ok: #1d6b3a; --bad: #a3262a;
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; margin: 0; padding-block: 28px 140px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.wrap { max-width: 1240px; margin: 0 auto }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; text-wrap: balance }
+h2.sec { font-size: 17px; font-weight: 600; margin: 34px 0 4px }
+.lede { color: var(--muted); max-width: 74ch; margin: 0 0 18px }
+.small { color: var(--muted); font-size: 13px; margin: 0 0 12px; max-width: 80ch }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px }
+.tab { font: inherit; font-weight: 500; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 14px; cursor: pointer; margin-bottom: -1px }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink) }
+.tab:focus-visible, .chip:focus-visible, .pick:focus-visible, .ghost:focus-visible, .seg button:focus-visible, .nm:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px }
+.chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 6px 13px; cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink) }
+.chip .n { font-family: var(--mono); font-size: 11px; opacity: .7; margin-left: 6px }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 470px), 1fr)); gap: 18px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.card[data-picked="true"] { border-color: var(--pick); box-shadow: 0 0 0 1px var(--pick) }
+.head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between }
+.head h3 { font-size: 16px; font-weight: 600; margin: 0 }
+.fam { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px }
+.note { color: var(--muted); font-size: 13px; margin: 2px 0 0; max-width: 48ch }
+.prov { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--muted); margin-top: 6px }
+.prov a { color: inherit }
+.pick, .ghost, .nm, .seg button { font: inherit; cursor: pointer }
+.pick { flex: none; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 6px 12px }
+.pick[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink); border-color: var(--pick) }
+.ghost { font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 9px }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.tile { padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--t-bg); color: var(--t-text); min-width: 0 }
+.tile .mode { display: block; font-size: 11px; font-weight: 600; margin-bottom: 9px }
+.tile .pc { padding: 14px; background: var(--t-card); color: var(--t-card-text); border: 1px solid var(--t-border); border-radius: 9px }
+.tile .eyebrow { margin: 0; color: var(--t-link); font-size: 9px; font-weight: 700; letter-spacing: .12em }
+.tile h4 { font-size: 16px; line-height: 1.25; margin: 8px 0 6px; font-weight: 600 }
+.tile p.body { margin: 0; opacity: .75; font-size: 12px; line-height: 1.55 }
+.tile .lnk { display: block; color: var(--t-link); font-size: 12px; margin: 11px 0 }
+.tile .btn { display: inline-block; color: var(--t-btn-text); background: var(--t-primary); padding: 7px 11px; border-radius: 7px; font-size: 12px }
+.tiles.mini { gap: 6px } .mini .tile { padding: 7px } .mini .tile .mode { font-size: 9px; margin-bottom: 5px } .mini .tile .pc { padding: 8px } .mini .tile h4 { font-size: 11px; margin: 4px 0 } .mini .tile .eyebrow, .mini .tile p.body, .mini .tile .lnk { display: none } .mini .tile .btn { font-size: 10px; padding: 4px 7px }
+.tiles.micro { gap: 4px } .micro .tile { padding: 5px } .micro .tile .mode, .micro .tile h4, .micro .tile .eyebrow, .micro .tile p.body, .micro .tile .lnk { display: none } .micro .tile .pc { padding: 5px } .micro .tile .btn { display: block; text-align: center; font-size: 10px; padding: 8px 2px }
+.hex { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--muted) }
+.hex div { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.hex span { display: flex; align-items: center; gap: 6px }
+.sw { width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); flex: none }
+.foot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap }
+.warn { font-size: 12px; color: var(--warn) }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.tray-in { max-width: 1240px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap }
+.picked { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0 }
+.tag { display: inline-flex; gap: 6px; align-items: center; background: var(--chip); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12.5px }
+.tag button { font: inherit; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-radius: 999px; padding: 0 6px; font-size: 14px }
+.none { color: var(--muted); flex: 1 }
+.primary { font: inherit; font-weight: 500; background: var(--pick); color: var(--pick-ink); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer }
+.primary:disabled { opacity: .4; cursor: default }
+.out { width: 100%; max-width: 1240px; margin: 8px auto 0; font-family: var(--mono); font-size: 12px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; height: 150px; resize: vertical }
+.toast { font-size: 12.5px; color: var(--muted) }
+/* lab */
+.lab { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.panel label.t, .panel .t { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.panel input[type="color"] { width: 46px; height: 40px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer }
+.panel input[type="text"], .panel select { font: inherit; font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0 }
+.panel select { font-family: var(--font) }
+.panel input[type="text"].hexin { width: 110px }
+input[type="range"] { width: 100%; accent-color: var(--ink) }
+.hueTrack { height: 12px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--line) }
+.names { display: flex; flex-wrap: wrap; gap: 6px }
+.nm { font-size: 12px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 4px 10px 4px 6px; display: inline-flex; gap: 6px; align-items: center }
+.nm i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line) }
+.nm[aria-pressed="true"] { border-color: var(--ink) }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--chip); border-radius: 9px; padding: 3px }
+.seg button { font-size: 12.5px; color: var(--ink); background: transparent; border: 0; border-radius: 7px; padding: 6px 10px }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 0 0 1px var(--line) }
+.seg button:disabled { opacity: .4; cursor: default }
+.styles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px }
+.styles button { font: inherit; font-size: 11px; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 5px 4px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; align-items: center }
+.styles button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.styles button:disabled { opacity: .4; cursor: default }
+.styles .pair { display: flex; width: 100%; height: 22px; border-radius: 5px; overflow: hidden; border: 1px solid var(--line) }
+.styles .pair b { flex: 1 }
+.hint { font-size: 12px; color: var(--muted); margin: 6px 0 0 }
+.res { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.six .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.six .cell span { font-size: 11px; color: var(--muted) }
+.six .cell .in { display: flex; gap: 6px; align-items: center }
+.six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px }
+.six input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.six .edited input { border-color: var(--ink) }
+.rep { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 }
+.rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em }
+.rep td.num { font-family: var(--mono); text-align: right }
+.good { color: var(--ok) } .poor { color: var(--bad) }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.cmp .col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.cmp h4 { margin: 0; font-size: 14px } .cmp p { margin: 0; color: var(--muted); font-size: 12.5px }
+.sweep { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+.sweep button { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 6px }
+.sweep button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.sweep .lab2 { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.chk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.slotrow { display: grid; grid-template-columns: 1.2fr 1fr 1fr 70px; gap: 8px; align-items: center; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--line) }
+.slotrow span.sw2 { display: flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 11.5px }
+.sw2 i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line); flex: none }
+.methods details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px }
+.methods summary { cursor: pointer; font-weight: 500 }
+.methods p { color: var(--muted); font-size: 13px; margin: 8px 0 0; max-width: 90ch }
+@media (max-width: 980px) { .lab { grid-template-columns: 1fr } .cmp, .chk { grid-template-columns: 1fr } }
+@media (max-width: 560px) { .tiles { grid-template-columns: 1fr } .hex { grid-template-columns: 1fr } .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } .slotrow { grid-template-columns: 1fr 1fr 1fr } .slotrow .d { display: none } body { padding-bottom: 190px } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .12s } }
+</style>
+<div class="wrap">
+  <h1>Site colour lab</h1>
+  <p class="small" style="margin-bottom:8px"><b>Research version.</b> It keeps the three methods, the hue sweep and the real-theme check. The simpler picker is <a href="index.html">index.html</a>.</p><p class="lede">Colours for the visitor site's theme, in two parts. Presets: <span id="count"></span> ready-made light and dark sets to pick from. From one colour: type or pick a single brand colour and get all six colours (primary, page and card, for light and dark) back, with three different methods side by side. Every tile is drawn with the rules of the Preview on the admin Site &gt; Theme page.</p>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="t-presets" aria-selected="true" aria-controls="tab-presets" type="button">Presets</button>
+    <button class="tab" role="tab" id="t-lab" aria-selected="false" aria-controls="tab-lab" type="button">From one colour</button>
+  </div>
+
+  <section id="tab-presets" role="tabpanel" aria-labelledby="t-presets">
+    <div class="bar" id="bar" role="group" aria-label="Filter by family"></div>
+    <div class="grid" id="grid"></div>
+    <div class="none" id="empty" hidden>Nothing picked yet. Press Pick on a card.</div>
+  </section>
+
+  <section id="tab-lab" role="tabpanel" aria-labelledby="t-lab" hidden>
+    <div class="lab">
+      <aside class="panel" aria-label="Inputs">
+        <div>
+          <span class="t">1. Brand colour</span>
+          <div class="row"><input type="color" id="pickc" aria-label="Brand colour picker"><input type="text" class="hexin" id="hexin" maxlength="7" spellcheck="false" aria-label="Brand colour as hex"></div>
+          <div class="names" id="names" style="margin-top:10px"></div>
+          <p class="hint">Or start from a colour in the presets:</p>
+          <select id="frompreset" aria-label="Start from a preset's primary colour"></select>
+        </div>
+        <div>
+          <label class="t" for="hue">Only change the hue</label>
+          <div class="hueTrack" id="hueTrack"></div>
+          <input type="range" id="hue" min="0" max="359" step="1" aria-label="Hue">
+          <p class="hint" id="hueHint"></p>
+        </div>
+        <div>
+          <span class="t">2. Page and card style</span>
+          <div class="styles" id="styles"></div>
+          <p class="hint" id="styleHint"></p>
+        </div>
+        <div>
+          <label class="t" for="depth">3. Dark mode depth</label>
+          <input type="range" id="depth" min="0" max="100" value="0" aria-label="Dark mode depth, soft to deep">
+          <div class="row" style="justify-content:space-between;font-size:12px;color:var(--muted)"><span>Soft dark</span><span>Deep dark</span></div>
+        </div>
+        <div>
+          <span class="t">Method</span>
+          <div class="seg" id="method" role="group" aria-label="Method"></div>
+          <p class="hint" id="methodHint"></p>
+        </div>
+      </aside>
+      <div class="res">
+        <div class="panel">
+          <div class="row" style="justify-content:space-between"><span class="t" style="margin:0">Result: the six colours</span><span class="row"><button class="ghost" id="resetEdits" type="button" hidden>Undo my edits</button><button class="ghost" id="copyJson" type="button">Copy as JSON</button><button class="ghost" id="copyList" type="button">Copy as list</button></span></div>
+          <div class="tiles" id="resTiles"></div>
+          <div class="six" id="six"></div>
+          <p class="hint">Edit any of the six to adjust by hand; the tiles and the checks follow.</p>
+        </div>
+        <div class="panel"><span class="t" style="margin:0">What the site makes of it (contrast, WCAG)</span><div id="report"></div></div>
+      </div>
+    </div>
+    <h2 class="sec">Three methods, same colour</h2>
+    <p class="small">Each method gets the same brand colour. Rules is the hand-written OKLCH logic from this project; Material 3 is Google's tonal-palette algorithm; Ant Design is the generator of that design system. Page and card style applies to Rules only: the other two bring their own greys.</p>
+    <div class="cmp" id="cmp"></div>
+    <h2 class="sec">Only changing the hue</h2>
+    <p class="small">The same lightness and vividness as the colour above, twelve hues, through the selected method. Click one to use it. Yellow, green and cyan cannot be as vivid as blue or purple at the same lightness; where the colour turns dull, that is the colour space, not a bug.</p>
+    <div class="sweep" id="sweep"></div>
+    <h2 class="sec">How close does it get to a real theme?</h2>
+    <p class="small">Take a real theme, give the method only its light primary, and compare what comes back with the theme's own five other colours. A distance below 0.02 is barely visible, above 0.05 is clearly different.</p>
+    <div class="row" style="margin-bottom:10px"><label for="realsel" class="t" style="margin:0">Theme</label><select id="realsel" class="panel" style="padding:8px"></select></div>
+    <div class="chk" id="check"></div>
+    <h2 class="sec">How the methods work</h2>
+    <div class="methods" id="about"></div>
+  </section>
+</div>
+<div class="tray" id="tray">
+  <div class="tray-in">
+    <b id="tlabel">Picked</b><div class="picked" id="picked"></div><span class="toast" id="toast" role="status"></span>
+    <button class="ghost" id="clear" type="button">Clear</button><button class="primary" id="copy" type="button">Copy picks</button>
+  </div>
+  <div class="tray-in"><textarea class="out" id="out" aria-label="Copied text" readonly hidden></textarea></div>
+</div>
+<script>(()=>{var fr=Object.defineProperty;var gr=(e,t)=>{for(var r in t)fr(e,r,{get:t[r],enumerable:!0})};var be={};gr(be,{Blend:()=>wt,Cam16:()=>_,Contrast:()=>N,CorePalette:()=>U,DislikeAnalyzer:()=>rt,DynamicColor:()=>C,DynamicScheme:()=>B,Hct:()=>v,MaterialDynamicColors:()=>i,QuantizerCelebi:()=>Ht,QuantizerMap:()=>vt,QuantizerWsmeans:()=>St,QuantizerWu:()=>Bt,Scheme:()=>Ct,SchemeAndroid:()=>ce,SchemeContent:()=>he,SchemeExpressive:()=>At,SchemeFidelity:()=>le,SchemeFruitSalad:()=>ue,SchemeMonochrome:()=>me,SchemeNeutral:()=>fe,SchemeRainbow:()=>ge,SchemeTonalSpot:()=>pe,SchemeVibrant:()=>kt,Score:()=>et,TemperatureCache:()=>ft,TonalPalette:()=>b,ViewingConditions:()=>Y,alphaFromArgb:()=>It,applyTheme:()=>Ir,argbFromHex:()=>Mr,argbFromLab:()=>te,argbFromLinrgb:()=>_t,argbFromLstar:()=>ee,argbFromRgb:()=>yt,argbFromRgba:()=>br,argbFromXyz:()=>Nt,blueFromArgb:()=>ht,clampDouble:()=>ut,clampInt:()=>Xt,customColor:()=>ze,delinearized:()=>st,differenceDegrees:()=>Mt,greenFromArgb:()=>ct,hexFromArgb:()=>qt,isOpaque:()=>dr,labFromArgb:()=>Tt,lerp:()=>ot,linearized:()=>X,lstarFromArgb:()=>bt,lstarFromY:()=>xt,matrixMultiply:()=>dt,redFromArgb:()=>it,rgbaFromArgb:()=>yr,rotationDirection:()=>Zt,sanitizeDegreesDouble:()=>O,sanitizeDegreesInt:()=>mt,signum:()=>V,sourceColorFromImage:()=>de,themeFromImage:()=>Dr,themeFromSourceColor:()=>Ve,whitePointD65:()=>re,xyzFromArgb:()=>Le,yFromLstar:()=>J});function V(e){return e<0?-1:e===0?0:1}function ot(e,t,r){return(1-r)*e+r*t}function Xt(e,t,r){return r<e?e:r>t?t:r}function ut(e,t,r){return r<e?e:r>t?t:r}function mt(e){return e=e%360,e<0&&(e=e+360),e}function O(e){return e=e%360,e<0&&(e=e+360),e}function Zt(e,t){return O(t-e)<=180?1:-1}function Mt(e,t){return 180-Math.abs(Math.abs(e-t)-180)}function dt(e,t){let r=e[0]*t[0][0]+e[1]*t[0][1]+e[2]*t[0][2],n=e[0]*t[1][0]+e[1]*t[1][1]+e[2]*t[1][2],a=e[0]*t[2][0]+e[1]*t[2][1]+e[2]*t[2][2];return[r,n,a]}var Ee=[[.41233895,.35762064,.18051042],[.2126,.7152,.0722],[.01932141,.11916382,.95034478]],pr=[[3.2413774792388685,-1.5376652402851851,-.49885366846268053],[-.9691452513005321,1.8758853451067872,.04156585616912061],[.05562093689691305,-.20395524564742123,1.0571799111220335]],Qt=[95.047,100,108.883];function yt(e,t,r){return(255<<24|(e&255)<<16|(t&255)<<8|r&255)>>>0}function _t(e){let t=st(e[0]),r=st(e[1]),n=st(e[2]);return yt(t,r,n)}function It(e){return e>>24&255}function it(e){return e>>16&255}function ct(e){return e>>8&255}function ht(e){return e&255}function dr(e){return It(e)>=255}function Nt(e,t,r){let n=pr,a=n[0][0]*e+n[0][1]*t+n[0][2]*r,o=n[1][0]*e+n[1][1]*t+n[1][2]*r,s=n[2][0]*e+n[2][1]*t+n[2][2]*r,c=st(a),h=st(o),u=st(s);return yt(c,h,u)}function Le(e){let t=X(it(e)),r=X(ct(e)),n=X(ht(e));return dt([t,r,n],Ee)}function te(e,t,r){let n=Qt,a=(e+16)/116,o=t/500+a,s=a-r/200,c=zt(o),h=zt(a),u=zt(s),l=c*n[0],m=h*n[1],d=u*n[2];return Nt(l,m,d)}function Tt(e){let t=X(it(e)),r=X(ct(e)),n=X(ht(e)),a=Ee,o=a[0][0]*t+a[0][1]*r+a[0][2]*n,s=a[1][0]*t+a[1][1]*r+a[1][2]*n,c=a[2][0]*t+a[2][1]*r+a[2][2]*n,h=Qt,u=o/h[0],l=s/h[1],m=c/h[2],d=Dt(u),g=Dt(l),p=Dt(m),f=116*g-16,A=500*(d-g),D=200*(g-p);return[f,A,D]}function ee(e){let t=J(e),r=st(t);return yt(r,r,r)}function bt(e){let t=Le(e)[1];return 116*Dt(t/100)-16}function J(e){return 100*zt((e+16)/116)}function xt(e){return Dt(e/100)*116-16}function X(e){let t=e/255;return t<=.040449936?t/12.92*100:Math.pow((t+.055)/1.055,2.4)*100}function st(e){let t=e/100,r=0;return t<=.0031308?r=t*12.92:r=1.055*Math.pow(t,1/2.4)-.055,Xt(0,255,Math.round(r*255))}function re(){return Qt}function yr(e){let t=it(e),r=ct(e),n=ht(e),a=It(e);return{r:t,g:r,b:n,a}}function br({r:e,g:t,b:r,a:n}){let a=Vt(e),o=Vt(t),s=Vt(r);return Vt(n)<<24|a<<16|o<<8|s}function Vt(e){return e<0?0:e>255?255:e}function Dt(e){let t=.008856451679035631,r=24389/27;return e>t?Math.pow(e,1/3):(r*e+16)/116}function zt(e){let t=.008856451679035631,r=24389/27,n=e*e*e;return n>t?n:(116*e-16)/r}var Y=class e{static make(t=re(),r=200/Math.PI*J(50)/100,n=50,a=2,o=!1){let s=t,c=s[0]*.401288+s[1]*.650173+s[2]*-.051461,h=s[0]*-.250268+s[1]*1.204414+s[2]*.045854,u=s[0]*-.002079+s[1]*.048952+s[2]*.953127,l=.8+a/10,m=l>=.9?ot(.59,.69,(l-.9)*10):ot(.525,.59,(l-.8)*10),d=o?1:l*(1-1/3.6*Math.exp((-r-42)/92));d=d>1?1:d<0?0:d;let g=l,p=[d*(100/c)+1-d,d*(100/h)+1-d,d*(100/u)+1-d],f=1/(5*r+1),A=f*f*f*f,D=1-A,y=A*r+.1*D*D*Math.cbrt(5*r),x=J(n)/t[1],T=1.48+Math.sqrt(x),I=.725/Math.pow(x,.2),F=I,P=[Math.pow(y*p[0]*c/100,.42),Math.pow(y*p[1]*h/100,.42),Math.pow(y*p[2]*u/100,.42)],M=[400*P[0]/(P[0]+27.13),400*P[1]/(P[1]+27.13),400*P[2]/(P[2]+27.13)],S=(2*M[0]+M[1]+.05*M[2])*I;return new e(x,S,I,F,m,g,p,y,Math.pow(y,.25),T)}constructor(t,r,n,a,o,s,c,h,u,l){this.n=t,this.aw=r,this.nbb=n,this.ncb=a,this.c=o,this.nc=s,this.rgbD=c,this.fl=h,this.fLRoot=u,this.z=l}};Y.DEFAULT=Y.make();var _=class e{constructor(t,r,n,a,o,s,c,h,u){this.hue=t,this.chroma=r,this.j=n,this.q=a,this.m=o,this.s=s,this.jstar=c,this.astar=h,this.bstar=u}distance(t){let r=this.jstar-t.jstar,n=this.astar-t.astar,a=this.bstar-t.bstar,o=Math.sqrt(r*r+n*n+a*a);return 1.41*Math.pow(o,.63)}static fromInt(t){return e.fromIntInViewingConditions(t,Y.DEFAULT)}static fromIntInViewingConditions(t,r){let n=(t&16711680)>>16,a=(t&65280)>>8,o=t&255,s=X(n),c=X(a),h=X(o),u=.41233895*s+.35762064*c+.18051042*h,l=.2126*s+.7152*c+.0722*h,m=.01932141*s+.11916382*c+.95034478*h,d=.401288*u+.650173*l-.051461*m,g=-.250268*u+1.204414*l+.045854*m,p=-.002079*u+.048952*l+.953127*m,f=r.rgbD[0]*d,A=r.rgbD[1]*g,D=r.rgbD[2]*p,y=Math.pow(r.fl*Math.abs(f)/100,.42),x=Math.pow(r.fl*Math.abs(A)/100,.42),T=Math.pow(r.fl*Math.abs(D)/100,.42),I=V(f)*400*y/(y+27.13),F=V(A)*400*x/(x+27.13),P=V(D)*400*T/(T+27.13),M=(11*I+-12*F+P)/11,S=(I+F-2*P)/9,w=(20*I+20*F+21*P)/20,G=(40*I+20*F+P)/20,j=Math.atan2(S,M)*180/Math.PI,E=j<0?j+360:j>=360?j-360:j,lt=E*Math.PI/180,Ot=G*r.nbb,at=100*Math.pow(Ot/r.aw,r.c*r.z),Et=4/r.c*Math.sqrt(at/100)*(r.aw+4)*r.fLRoot,Yt=E<20.14?E+360:E,Wt=.25*(Math.cos(Yt*Math.PI/180+2)+3.8),Jt=5e4/13*Wt*r.nc*r.ncb*Math.sqrt(M*M+S*S)/(w+.305),Lt=Math.pow(Jt,.9)*Math.pow(1.64-Math.pow(.29,r.n),.73),He=Lt*Math.sqrt(at/100),Re=He*r.fLRoot,hr=50*Math.sqrt(Lt*r.c/(r.aw+4)),lr=(1+100*.007)*at/(1+.007*at),Oe=1/.0228*Math.log(1+.0228*Re),ur=Oe*Math.cos(lt),mr=Oe*Math.sin(lt);return new e(E,He,at,Et,Re,hr,lr,ur,mr)}static fromJch(t,r,n){return e.fromJchInViewingConditions(t,r,n,Y.DEFAULT)}static fromJchInViewingConditions(t,r,n,a){let o=4/a.c*Math.sqrt(t/100)*(a.aw+4)*a.fLRoot,s=r*a.fLRoot,c=r/Math.sqrt(t/100),h=50*Math.sqrt(c*a.c/(a.aw+4)),u=n*Math.PI/180,l=(1+100*.007)*t/(1+.007*t),m=1/.0228*Math.log(1+.0228*s),d=m*Math.cos(u),g=m*Math.sin(u);return new e(n,r,t,o,s,h,l,d,g)}static fromUcs(t,r,n){return e.fromUcsInViewingConditions(t,r,n,Y.DEFAULT)}static fromUcsInViewingConditions(t,r,n,a){let o=r,s=n,c=Math.sqrt(o*o+s*s),u=(Math.exp(c*.0228)-1)/.0228/a.fLRoot,l=Math.atan2(s,o)*(180/Math.PI);l<0&&(l+=360);let m=t/(1-(t-100)*.007);return e.fromJchInViewingConditions(m,u,l,a)}toInt(){return this.viewed(Y.DEFAULT)}viewed(t){let r=this.chroma===0||this.j===0?0:this.chroma/Math.sqrt(this.j/100),n=Math.pow(r/Math.pow(1.64-Math.pow(.29,t.n),.73),1/.9),a=this.hue*Math.PI/180,o=.25*(Math.cos(a+2)+3.8),s=t.aw*Math.pow(this.j/100,1/t.c/t.z),c=o*(5e4/13)*t.nc*t.ncb,h=s/t.nbb,u=Math.sin(a),l=Math.cos(a),m=23*(h+.305)*n/(23*c+11*n*l+108*n*u),d=m*l,g=m*u,p=(460*h+451*d+288*g)/1403,f=(460*h-891*d-261*g)/1403,A=(460*h-220*d-6300*g)/1403,D=Math.max(0,27.13*Math.abs(p)/(400-Math.abs(p))),y=V(p)*(100/t.fl)*Math.pow(D,1/.42),x=Math.max(0,27.13*Math.abs(f)/(400-Math.abs(f))),T=V(f)*(100/t.fl)*Math.pow(x,1/.42),I=Math.max(0,27.13*Math.abs(A)/(400-Math.abs(A))),F=V(A)*(100/t.fl)*Math.pow(I,1/.42),P=y/t.rgbD[0],M=T/t.rgbD[1],S=F/t.rgbD[2],w=1.86206786*P-1.01125463*M+.14918677*S,G=.38752654*P+.62144744*M-.00897398*S,K=-.0158415*P-.03412294*M+1.04996444*S;return Nt(w,G,K)}static fromXyzInViewingConditions(t,r,n,a){let o=.401288*t+.650173*r-.051461*n,s=-.250268*t+1.204414*r+.045854*n,c=-.002079*t+.048952*r+.953127*n,h=a.rgbD[0]*o,u=a.rgbD[1]*s,l=a.rgbD[2]*c,m=Math.pow(a.fl*Math.abs(h)/100,.42),d=Math.pow(a.fl*Math.abs(u)/100,.42),g=Math.pow(a.fl*Math.abs(l)/100,.42),p=V(h)*400*m/(m+27.13),f=V(u)*400*d/(d+27.13),A=V(l)*400*g/(g+27.13),D=(11*p+-12*f+A)/11,y=(p+f-2*A)/9,x=(20*p+20*f+21*A)/20,T=(40*p+20*f+A)/20,F=Math.atan2(y,D)*180/Math.PI,P=F<0?F+360:F>=360?F-360:F,M=P*Math.PI/180,S=T*a.nbb,w=100*Math.pow(S/a.aw,a.c*a.z),G=4/a.c*Math.sqrt(w/100)*(a.aw+4)*a.fLRoot,K=P<20.14?P+360:P,j=1/4*(Math.cos(K*Math.PI/180+2)+3.8),lt=5e4/13*j*a.nc*a.ncb*Math.sqrt(D*D+y*y)/(x+.305),Ot=Math.pow(lt,.9)*Math.pow(1.64-Math.pow(.29,a.n),.73),at=Ot*Math.sqrt(w/100),Et=at*a.fLRoot,Yt=50*Math.sqrt(Ot*a.c/(a.aw+4)),Wt=(1+100*.007)*w/(1+.007*w),Kt=Math.log(1+.0228*Et)/.0228,Jt=Kt*Math.cos(M),Lt=Kt*Math.sin(M);return new e(P,at,w,G,Et,Yt,Wt,Jt,Lt)}xyzInViewingConditions(t){let r=this.chroma===0||this.j===0?0:this.chroma/Math.sqrt(this.j/100),n=Math.pow(r/Math.pow(1.64-Math.pow(.29,t.n),.73),1/.9),a=this.hue*Math.PI/180,o=.25*(Math.cos(a+2)+3.8),s=t.aw*Math.pow(this.j/100,1/t.c/t.z),c=o*(5e4/13)*t.nc*t.ncb,h=s/t.nbb,u=Math.sin(a),l=Math.cos(a),m=23*(h+.305)*n/(23*c+11*n*l+108*n*u),d=m*l,g=m*u,p=(460*h+451*d+288*g)/1403,f=(460*h-891*d-261*g)/1403,A=(460*h-220*d-6300*g)/1403,D=Math.max(0,27.13*Math.abs(p)/(400-Math.abs(p))),y=V(p)*(100/t.fl)*Math.pow(D,1/.42),x=Math.max(0,27.13*Math.abs(f)/(400-Math.abs(f))),T=V(f)*(100/t.fl)*Math.pow(x,1/.42),I=Math.max(0,27.13*Math.abs(A)/(400-Math.abs(A))),F=V(A)*(100/t.fl)*Math.pow(I,1/.42),P=y/t.rgbD[0],M=T/t.rgbD[1],S=F/t.rgbD[2],w=1.86206786*P-1.01125463*M+.14918677*S,G=.38752654*P+.62144744*M-.00897398*S,K=-.0158415*P-.03412294*M+1.04996444*S;return[w,G,K]}};var Q=class e{static sanitizeRadians(t){return(t+Math.PI*8)%(Math.PI*2)}static trueDelinearized(t){let r=t/100,n=0;return r<=.0031308?n=r*12.92:n=1.055*Math.pow(r,1/2.4)-.055,n*255}static chromaticAdaptation(t){let r=Math.pow(Math.abs(t),.42);return V(t)*400*r/(r+27.13)}static hueOf(t){let r=dt(t,e.SCALED_DISCOUNT_FROM_LINRGB),n=e.chromaticAdaptation(r[0]),a=e.chromaticAdaptation(r[1]),o=e.chromaticAdaptation(r[2]),s=(11*n+-12*a+o)/11,c=(n+a-2*o)/9;return Math.atan2(c,s)}static areInCyclicOrder(t,r,n){let a=e.sanitizeRadians(r-t),o=e.sanitizeRadians(n-t);return a<o}static intercept(t,r,n){return(r-t)/(n-t)}static lerpPoint(t,r,n){return[t[0]+(n[0]-t[0])*r,t[1]+(n[1]-t[1])*r,t[2]+(n[2]-t[2])*r]}static setCoordinate(t,r,n,a){let o=e.intercept(t[a],r,n[a]);return e.lerpPoint(t,o,n)}static isBounded(t){return 0<=t&&t<=100}static nthVertex(t,r){let n=e.Y_FROM_LINRGB[0],a=e.Y_FROM_LINRGB[1],o=e.Y_FROM_LINRGB[2],s=r%4<=1?0:100,c=r%2===0?0:100;if(r<4){let h=s,u=c,l=(t-h*a-u*o)/n;return e.isBounded(l)?[l,h,u]:[-1,-1,-1]}else if(r<8){let h=s,u=c,l=(t-u*n-h*o)/a;return e.isBounded(l)?[u,l,h]:[-1,-1,-1]}else{let h=s,u=c,l=(t-h*n-u*a)/o;return e.isBounded(l)?[h,u,l]:[-1,-1,-1]}}static bisectToSegment(t,r){let n=[-1,-1,-1],a=n,o=0,s=0,c=!1,h=!0;for(let u=0;u<12;u++){let l=e.nthVertex(t,u);if(l[0]<0)continue;let m=e.hueOf(l);if(!c){n=l,a=l,o=m,s=m,c=!0;continue}(h||e.areInCyclicOrder(o,m,s))&&(h=!1,e.areInCyclicOrder(o,r,m)?(a=l,s=m):(n=l,o=m))}return[n,a]}static midpoint(t,r){return[(t[0]+r[0])/2,(t[1]+r[1])/2,(t[2]+r[2])/2]}static criticalPlaneBelow(t){return Math.floor(t-.5)}static criticalPlaneAbove(t){return Math.ceil(t-.5)}static bisectToLimit(t,r){let n=e.bisectToSegment(t,r),a=n[0],o=e.hueOf(a),s=n[1];for(let c=0;c<3;c++)if(a[c]!==s[c]){let h=-1,u=255;a[c]<s[c]?(h=e.criticalPlaneBelow(e.trueDelinearized(a[c])),u=e.criticalPlaneAbove(e.trueDelinearized(s[c]))):(h=e.criticalPlaneAbove(e.trueDelinearized(a[c])),u=e.criticalPlaneBelow(e.trueDelinearized(s[c])));for(let l=0;l<8&&!(Math.abs(u-h)<=1);l++){let m=Math.floor((h+u)/2),d=e.CRITICAL_PLANES[m],g=e.setCoordinate(a,d,s,c),p=e.hueOf(g);e.areInCyclicOrder(o,r,p)?(s=g,u=m):(a=g,o=p,h=m)}}return e.midpoint(a,s)}static inverseChromaticAdaptation(t){let r=Math.abs(t),n=Math.max(0,27.13*r/(400-r));return V(t)*Math.pow(n,1/.42)}static findResultByJ(t,r,n){let a=Math.sqrt(n)*11,o=Y.DEFAULT,s=1/Math.pow(1.64-Math.pow(.29,o.n),.73),h=.25*(Math.cos(t+2)+3.8)*(5e4/13)*o.nc*o.ncb,u=Math.sin(t),l=Math.cos(t);for(let m=0;m<5;m++){let d=a/100,g=r===0||a===0?0:r/Math.sqrt(d),p=Math.pow(g*s,1/.9),A=o.aw*Math.pow(d,1/o.c/o.z)/o.nbb,D=23*(A+.305)*p/(23*h+11*p*l+108*p*u),y=D*l,x=D*u,T=(460*A+451*y+288*x)/1403,I=(460*A-891*y-261*x)/1403,F=(460*A-220*y-6300*x)/1403,P=e.inverseChromaticAdaptation(T),M=e.inverseChromaticAdaptation(I),S=e.inverseChromaticAdaptation(F),w=dt([P,M,S],e.LINRGB_FROM_SCALED_DISCOUNT);if(w[0]<0||w[1]<0||w[2]<0)return 0;let G=e.Y_FROM_LINRGB[0],K=e.Y_FROM_LINRGB[1],j=e.Y_FROM_LINRGB[2],E=G*w[0]+K*w[1]+j*w[2];if(E<=0)return 0;if(m===4||Math.abs(E-n)<.002)return w[0]>100.01||w[1]>100.01||w[2]>100.01?0:_t(w);a=a-(E-n)*a/(2*E)}return 0}static solveToInt(t,r,n){if(r<1e-4||n<1e-4||n>99.9999)return ee(n);t=O(t);let a=t/180*Math.PI,o=J(n),s=e.findResultByJ(a,r,o);if(s!==0)return s;let c=e.bisectToLimit(o,a);return _t(c)}static solveToCam(t,r,n){return _.fromInt(e.solveToInt(t,r,n))}};Q.SCALED_DISCOUNT_FROM_LINRGB=[[.001200833568784504,.002389694492170889,.0002795742885861124],[.0005891086651375999,.0029785502573438758,.0003270666104008398],[.00010146692491640572,.0005364214359186694,.0032979401770712076]];Q.LINRGB_FROM_SCALED_DISCOUNT=[[1373.2198709594231,-1100.4251190754821,-7.278681089101213],[-271.815969077903,559.6580465940733,-32.46047482791194],[1.9622899599665666,-57.173814538844006,308.7233197812385]];Q.Y_FROM_LINRGB=[.2126,.7152,.0722];Q.CRITICAL_PLANES=[.015176349177441876,.045529047532325624,.07588174588720938,.10623444424209313,.13658714259697685,.16693984095186062,.19729253930674434,.2276452376616281,.2579979360165119,.28835063437139563,.3188300904430532,.350925934958123,.3848314933096426,.42057480301049466,.458183274052838,.4976837250274023,.5391024159806381,.5824650784040898,.6277969426914107,.6751227633498623,.7244668422128921,.775853049866786,.829304845476233,.8848452951698498,.942497089126609,1.0022825574869039,1.0642236851973577,1.1283421258858297,1.1946592148522128,1.2631959812511864,1.3339731595349034,1.407011200216447,1.4823302800086415,1.5599503113873272,1.6398909516233677,1.7221716113234105,1.8068114625156377,1.8938294463134073,1.9832442801866852,2.075074464868551,2.1693382909216234,2.2660538449872063,2.36523901573795,2.4669114995532007,2.5710888059345764,2.6777882626779785,2.7870270208169257,2.898822059350997,3.0131901897720907,3.1301480604002863,3.2497121605402226,3.3718988244681087,3.4967242352587946,3.624204428461639,3.754355295633311,3.887192587735158,4.022731918402185,4.160988767090289,4.301978482107941,4.445716283538092,4.592217266055746,4.741496401646282,4.893568542229298,5.048448422192488,5.20615066083972,5.3666897647573375,5.5300801301023865,5.696336044816294,5.865471690767354,6.037501145825082,6.212438385869475,6.390297286737924,6.571091626112461,6.7548350853498045,6.941541251256611,7.131223617812143,7.323895587840543,7.5195704746346665,7.7182615035334345,7.919981813454504,8.124744458384042,8.332562408825165,8.543448553206703,8.757415699253682,8.974476575321063,9.194643831691977,9.417930041841839,9.644347703669503,9.873909240696694,10.106627003236781,10.342513269534024,10.58158024687427,10.8238400726681,11.069304815507364,11.317986476196008,11.569896988756009,11.825048221409341,12.083451977536606,12.345119996613247,12.610063955123938,12.878295467455942,13.149826086772048,13.42466730586372,13.702830557985108,13.984327217668513,14.269168601521828,14.55736596900856,14.848930523210871,15.143873411576273,15.44220572664832,15.743938506781891,16.04908273684337,16.35764934889634,16.66964922287304,16.985093187232053,17.30399201960269,17.62635644741625,17.95219714852476,18.281524751807332,18.614349837764564,18.95068293910138,19.290534541298456,19.633915083172692,19.98083495742689,20.331304511189067,20.685334046541502,21.042933821039977,21.404114048223256,21.76888489811322,22.137256497705877,22.50923893145328,22.884842241736916,23.264076429332462,23.6469514538663,24.033477234264016,24.42366364919083,24.817520537484558,25.21505769858089,25.61628489293138,26.021211842414342,26.429848230738664,26.842203703840827,27.258287870275353,27.678110301598522,28.10168053274597,28.529008062403893,28.96010235337422,29.39497283293396,29.83362889318845,30.276079891419332,30.722335150426627,31.172403958865512,31.62629557157785,32.08401920991837,32.54558406207592,33.010999283389665,33.4802739966603,33.953417292456834,34.430438229418264,34.911345834551085,35.39614910352207,35.88485700094671,36.37747846067349,36.87402238606382,37.37449765026789,37.87891309649659,38.38727753828926,38.89959975977785,39.41588851594697,39.93615253289054,40.460400508064545,40.98864111053629,41.520882981230194,42.05713473317016,42.597404951718396,43.141702194811224,43.6900349931913,44.24241185063697,44.798841244188324,45.35933162437017,45.92389141541209,46.49252901546552,47.065252796817916,47.64207110610409,48.22299226451468,48.808024568002054,49.3971762874833,49.9904556690408,50.587870934119984,51.189430279724725,51.79514187861014,52.40501387947288,53.0190544071392,53.637271562750364,54.259673423945976,54.88626804504493,55.517063457223934,56.15206766869424,56.79128866487574,57.43473440856916,58.08241284012621,58.734331877617365,59.39049941699807,60.05092333227251,60.715611475655585,61.38457167773311,62.057811747619894,62.7353394731159,63.417162620860914,64.10328893648692,64.79372614476921,65.48848194977529,66.18756403501224,66.89098006357258,67.59873767827808,68.31084450182222,69.02730813691093,69.74813616640164,70.47333615344107,71.20291564160104,71.93688215501312,72.67524319850172,73.41800625771542,74.16517879925733,74.9167682708136,75.67278210128072,76.43322770089146,77.1981124613393,77.96744375590167,78.74122893956174,79.51947534912904,80.30219030335869,81.08938110306934,81.88105503125999,82.67721935322541,83.4778813166706,84.28304815182372,85.09272707154808,85.90692527145302,86.72564993000343,87.54890820862819,88.3767072518277,89.2090541872801,90.04595612594655,90.88742016217518,91.73345337380438,92.58406282226491,93.43925555268066,94.29903859396902,95.16341895893969,96.03240364439274,96.9059996312159,97.78421388448044,98.6670533535366,99.55452497210776];var v=class e{static from(t,r,n){return new e(Q.solveToInt(t,r,n))}static fromInt(t){return new e(t)}toInt(){return this.argb}get hue(){return this.internalHue}set hue(t){this.setInternalState(Q.solveToInt(t,this.internalChroma,this.internalTone))}get chroma(){return this.internalChroma}set chroma(t){this.setInternalState(Q.solveToInt(this.internalHue,t,this.internalTone))}get tone(){return this.internalTone}set tone(t){this.setInternalState(Q.solveToInt(this.internalHue,this.internalChroma,t))}constructor(t){this.argb=t;let r=_.fromInt(t);this.internalHue=r.hue,this.internalChroma=r.chroma,this.internalTone=bt(t),this.argb=t}setInternalState(t){let r=_.fromInt(t);this.internalHue=r.hue,this.internalChroma=r.chroma,this.internalTone=bt(t),this.argb=t}inViewingConditions(t){let n=_.fromInt(this.toInt()).xyzInViewingConditions(t),a=_.fromXyzInViewingConditions(n[0],n[1],n[2],Y.make());return e.from(a.hue,a.chroma,xt(n[1]))}};var wt=class e{static harmonize(t,r){let n=v.fromInt(t),a=v.fromInt(r),o=Mt(n.hue,a.hue),s=Math.min(o*.5,15),c=O(n.hue+s*Zt(n.hue,a.hue));return v.from(c,n.chroma,n.tone).toInt()}static hctHue(t,r,n){let a=e.cam16Ucs(t,r,n),o=_.fromInt(a),s=_.fromInt(t);return v.from(o.hue,s.chroma,bt(t)).toInt()}static cam16Ucs(t,r,n){let a=_.fromInt(t),o=_.fromInt(r),s=a.jstar,c=a.astar,h=a.bstar,u=o.jstar,l=o.astar,m=o.bstar,d=s+(u-s)*n,g=c+(l-c)*n,p=h+(m-h)*n;return _.fromUcs(d,g,p).toInt()}};var N=class e{static ratioOfTones(t,r){return t=ut(0,100,t),r=ut(0,100,r),e.ratioOfYs(J(t),J(r))}static ratioOfYs(t,r){let n=t>r?t:r,a=n===r?t:r;return(n+5)/(a+5)}static lighter(t,r){if(t<0||t>100)return-1;let n=J(t),a=r*(n+5)-5,o=e.ratioOfYs(a,n),s=Math.abs(o-r);if(o<r&&s>.04)return-1;let c=xt(a)+.4;return c<0||c>100?-1:c}static darker(t,r){if(t<0||t>100)return-1;let n=J(t),a=(n+5)/r-5,o=e.ratioOfYs(n,a),s=Math.abs(o-r);if(o<r&&s>.04)return-1;let c=xt(a)-.4;return c<0||c>100?-1:c}static lighterUnsafe(t,r){let n=e.lighter(t,r);return n<0?100:n}static darkerUnsafe(t,r){let n=e.darker(t,r);return n<0?0:n}};var rt=class e{static isDisliked(t){let r=Math.round(t.hue)>=90&&Math.round(t.hue)<=111,n=Math.round(t.chroma)>16,a=Math.round(t.tone)<65;return r&&n&&a}static fixIfDisliked(t){return e.isDisliked(t)?v.from(t.hue,t.chroma,70):t}};var C=class e{static fromPalette(t){return new e(t.name??"",t.palette,t.tone,t.isBackground??!1,t.background,t.secondBackground,t.contrastCurve,t.toneDeltaPair)}constructor(t,r,n,a,o,s,c,h){if(this.name=t,this.palette=r,this.tone=n,this.isBackground=a,this.background=o,this.secondBackground=s,this.contrastCurve=c,this.toneDeltaPair=h,this.hctCache=new Map,!o&&s)throw new Error(`Color ${t} has secondBackgrounddefined, but background is not defined.`);if(!o&&c)throw new Error(`Color ${t} has contrastCurvedefined, but background is not defined.`);if(o&&!c)throw new Error(`Color ${t} has backgrounddefined, but contrastCurve is not defined.`)}getArgb(t){return this.getHct(t).toInt()}getHct(t){let r=this.hctCache.get(t);if(r!=null)return r;let n=this.getTone(t),a=this.palette(t).getHct(n);return this.hctCache.size>4&&this.hctCache.clear(),this.hctCache.set(t,a),a}getTone(t){let r=t.contrastLevel<0;if(this.toneDeltaPair){let n=this.toneDeltaPair(t),a=n.roleA,o=n.roleB,s=n.delta,c=n.polarity,h=n.stayTogether,l=this.background(t).getTone(t),m=c==="nearer"||c==="lighter"&&!t.isDark||c==="darker"&&t.isDark,d=m?a:o,g=m?o:a,p=this.name===d.name,f=t.isDark?1:-1,A=d.contrastCurve.get(t.contrastLevel),D=g.contrastCurve.get(t.contrastLevel),y=d.tone(t),x=N.ratioOfTones(l,y)>=A?y:e.foregroundTone(l,A),T=g.tone(t),I=N.ratioOfTones(l,T)>=D?T:e.foregroundTone(l,D);return r&&(x=e.foregroundTone(l,A),I=e.foregroundTone(l,D)),(I-x)*f>=s||(I=ut(0,100,x+s*f),(I-x)*f>=s||(x=ut(0,100,I-s*f))),50<=x&&x<60?f>0?(x=60,I=Math.max(I,x+s*f)):(x=49,I=Math.min(I,x+s*f)):50<=I&&I<60&&(h?f>0?(x=60,I=Math.max(I,x+s*f)):(x=49,I=Math.min(I,x+s*f)):f>0?I=60:I=49),p?x:I}else{let n=this.tone(t);if(this.background==null)return n;let a=this.background(t).getTone(t),o=this.contrastCurve.get(t.contrastLevel);if(N.ratioOfTones(a,n)>=o||(n=e.foregroundTone(a,o)),r&&(n=e.foregroundTone(a,o)),this.isBackground&&50<=n&&n<60&&(N.ratioOfTones(49,a)>=o?n=49:n=60),this.secondBackground){let[s,c]=[this.background,this.secondBackground],[h,u]=[s(t).getTone(t),c(t).getTone(t)],[l,m]=[Math.max(h,u),Math.min(h,u)];if(N.ratioOfTones(l,n)>=o&&N.ratioOfTones(m,n)>=o)return n;let d=N.lighter(l,o),g=N.darker(m,o),p=[];return d!==-1&&p.push(d),g!==-1&&p.push(g),e.tonePrefersLightForeground(h)||e.tonePrefersLightForeground(u)?d<0?100:d:p.length===1?p[0]:g<0?0:g}return n}}static foregroundTone(t,r){let n=N.lighterUnsafe(t,r),a=N.darkerUnsafe(t,r),o=N.ratioOfTones(n,t),s=N.ratioOfTones(a,t);if(e.tonePrefersLightForeground(t)){let h=Math.abs(o-s)<.1&&o<r&&s<r;return o>=r||o>=s||h?n:a}else return s>=r||s>=o?a:n}static tonePrefersLightForeground(t){return Math.round(t)<60}static toneAllowsLightForeground(t){return Math.round(t)<=49}static enableLightForeground(t){return e.tonePrefersLightForeground(t)&&!e.toneAllowsLightForeground(t)?49:t}};var b=class e{static fromInt(t){let r=v.fromInt(t);return e.fromHct(r)}static fromHct(t){return new e(t.hue,t.chroma,t)}static fromHueAndChroma(t,r){let n=new ne(t,r).create();return new e(t,r,n)}constructor(t,r,n){this.hue=t,this.chroma=r,this.keyColor=n,this.cache=new Map}tone(t){let r=this.cache.get(t);return r===void 0&&(r=v.from(this.hue,this.chroma,t).toInt(),this.cache.set(t,r)),r}getHct(t){return v.fromInt(this.tone(t))}},ne=class{constructor(t,r){this.hue=t,this.requestedChroma=r,this.chromaCache=new Map,this.maxChromaValue=200}create(){let a=0,o=100;for(;a<o;){let s=Math.floor((a+o)/2),c=this.maxChroma(s)<this.maxChroma(s+1);if(this.maxChroma(s)>=this.requestedChroma-.01)if(Math.abs(a-50)<Math.abs(o-50))o=s;else{if(a===s)return v.from(this.hue,this.requestedChroma,a);a=s}else c?a=s+1:o=s}return v.from(this.hue,this.requestedChroma,a)}maxChroma(t){if(this.chromaCache.has(t))return this.chromaCache.get(t);let r=v.from(this.hue,this.maxChromaValue,t).chroma;return this.chromaCache.set(t,r),r}};var k=class{constructor(t,r,n,a){this.low=t,this.normal=r,this.medium=n,this.high=a}get(t){return t<=-1?this.low:t<0?ot(this.low,this.normal,(t- -1)/1):t<.5?ot(this.normal,this.medium,(t-0)/.5):t<1?ot(this.medium,this.high,(t-.5)/.5):this.high}};var z=class{constructor(t,r,n,a,o){this.roleA=t,this.roleB=r,this.delta=n,this.polarity=a,this.stayTogether=o}};var H;(function(e){e[e.MONOCHROME=0]="MONOCHROME",e[e.NEUTRAL=1]="NEUTRAL",e[e.TONAL_SPOT=2]="TONAL_SPOT",e[e.VIBRANT=3]="VIBRANT",e[e.EXPRESSIVE=4]="EXPRESSIVE",e[e.FIDELITY=5]="FIDELITY",e[e.CONTENT=6]="CONTENT",e[e.RAINBOW=7]="RAINBOW",e[e.FRUIT_SALAD=8]="FRUIT_SALAD"})(H||(H={}));function Pt(e){return e.variant===H.FIDELITY||e.variant===H.CONTENT}function R(e){return e.variant===H.MONOCHROME}function xr(e,t,r,n){let a=r,o=v.from(e,t,r);if(o.chroma<t){let s=o.chroma;for(;o.chroma<t;){a+=n?-1:1;let c=v.from(e,t,a);if(s>c.chroma||Math.abs(c.chroma-t)<.4)break;let h=Math.abs(c.chroma-t),u=Math.abs(o.chroma-t);h<u&&(o=c),s=Math.max(s,c.chroma)}}return a}var i=class e{static highestSurface(t){return t.isDark?e.surfaceBright:e.surfaceDim}};i.contentAccentToneDelta=15;i.primaryPaletteKeyColor=C.fromPalette({name:"primary_palette_key_color",palette:e=>e.primaryPalette,tone:e=>e.primaryPalette.keyColor.tone});i.secondaryPaletteKeyColor=C.fromPalette({name:"secondary_palette_key_color",palette:e=>e.secondaryPalette,tone:e=>e.secondaryPalette.keyColor.tone});i.tertiaryPaletteKeyColor=C.fromPalette({name:"tertiary_palette_key_color",palette:e=>e.tertiaryPalette,tone:e=>e.tertiaryPalette.keyColor.tone});i.neutralPaletteKeyColor=C.fromPalette({name:"neutral_palette_key_color",palette:e=>e.neutralPalette,tone:e=>e.neutralPalette.keyColor.tone});i.neutralVariantPaletteKeyColor=C.fromPalette({name:"neutral_variant_palette_key_color",palette:e=>e.neutralVariantPalette,tone:e=>e.neutralVariantPalette.keyColor.tone});i.background=C.fromPalette({name:"background",palette:e=>e.neutralPalette,tone:e=>e.isDark?6:98,isBackground:!0});i.onBackground=C.fromPalette({name:"on_background",palette:e=>e.neutralPalette,tone:e=>e.isDark?90:10,background:e=>i.background,contrastCurve:new k(3,3,4.5,7)});i.surface=C.fromPalette({name:"surface",palette:e=>e.neutralPalette,tone:e=>e.isDark?6:98,isBackground:!0});i.surfaceDim=C.fromPalette({name:"surface_dim",palette:e=>e.neutralPalette,tone:e=>e.isDark?6:new k(87,87,80,75).get(e.contrastLevel),isBackground:!0});i.surfaceBright=C.fromPalette({name:"surface_bright",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(24,24,29,34).get(e.contrastLevel):98,isBackground:!0});i.surfaceContainerLowest=C.fromPalette({name:"surface_container_lowest",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(4,4,2,0).get(e.contrastLevel):100,isBackground:!0});i.surfaceContainerLow=C.fromPalette({name:"surface_container_low",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(10,10,11,12).get(e.contrastLevel):new k(96,96,96,95).get(e.contrastLevel),isBackground:!0});i.surfaceContainer=C.fromPalette({name:"surface_container",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(12,12,16,20).get(e.contrastLevel):new k(94,94,92,90).get(e.contrastLevel),isBackground:!0});i.surfaceContainerHigh=C.fromPalette({name:"surface_container_high",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(17,17,21,25).get(e.contrastLevel):new k(92,92,88,85).get(e.contrastLevel),isBackground:!0});i.surfaceContainerHighest=C.fromPalette({name:"surface_container_highest",palette:e=>e.neutralPalette,tone:e=>e.isDark?new k(22,22,26,30).get(e.contrastLevel):new k(90,90,84,80).get(e.contrastLevel),isBackground:!0});i.onSurface=C.fromPalette({name:"on_surface",palette:e=>e.neutralPalette,tone:e=>e.isDark?90:10,background:e=>i.highestSurface(e),contrastCurve:new k(4.5,7,11,21)});i.surfaceVariant=C.fromPalette({name:"surface_variant",palette:e=>e.neutralVariantPalette,tone:e=>e.isDark?30:90,isBackground:!0});i.onSurfaceVariant=C.fromPalette({name:"on_surface_variant",palette:e=>e.neutralVariantPalette,tone:e=>e.isDark?80:30,background:e=>i.highestSurface(e),contrastCurve:new k(3,4.5,7,11)});i.inverseSurface=C.fromPalette({name:"inverse_surface",palette:e=>e.neutralPalette,tone:e=>e.isDark?90:20});i.inverseOnSurface=C.fromPalette({name:"inverse_on_surface",palette:e=>e.neutralPalette,tone:e=>e.isDark?20:95,background:e=>i.inverseSurface,contrastCurve:new k(4.5,7,11,21)});i.outline=C.fromPalette({name:"outline",palette:e=>e.neutralVariantPalette,tone:e=>e.isDark?60:50,background:e=>i.highestSurface(e),contrastCurve:new k(1.5,3,4.5,7)});i.outlineVariant=C.fromPalette({name:"outline_variant",palette:e=>e.neutralVariantPalette,tone:e=>e.isDark?30:80,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5)});i.shadow=C.fromPalette({name:"shadow",palette:e=>e.neutralPalette,tone:e=>0});i.scrim=C.fromPalette({name:"scrim",palette:e=>e.neutralPalette,tone:e=>0});i.surfaceTint=C.fromPalette({name:"surface_tint",palette:e=>e.primaryPalette,tone:e=>e.isDark?80:40,isBackground:!0});i.primary=C.fromPalette({name:"primary",palette:e=>e.primaryPalette,tone:e=>R(e)?e.isDark?100:0:e.isDark?80:40,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(3,4.5,7,7),toneDeltaPair:e=>new z(i.primaryContainer,i.primary,10,"nearer",!1)});i.onPrimary=C.fromPalette({name:"on_primary",palette:e=>e.primaryPalette,tone:e=>R(e)?e.isDark?10:90:e.isDark?20:100,background:e=>i.primary,contrastCurve:new k(4.5,7,11,21)});i.primaryContainer=C.fromPalette({name:"primary_container",palette:e=>e.primaryPalette,tone:e=>Pt(e)?e.sourceColorHct.tone:R(e)?e.isDark?85:25:e.isDark?30:90,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.primaryContainer,i.primary,10,"nearer",!1)});i.onPrimaryContainer=C.fromPalette({name:"on_primary_container",palette:e=>e.primaryPalette,tone:e=>Pt(e)?C.foregroundTone(i.primaryContainer.tone(e),4.5):R(e)?e.isDark?0:100:e.isDark?90:30,background:e=>i.primaryContainer,contrastCurve:new k(3,4.5,7,11)});i.inversePrimary=C.fromPalette({name:"inverse_primary",palette:e=>e.primaryPalette,tone:e=>e.isDark?40:80,background:e=>i.inverseSurface,contrastCurve:new k(3,4.5,7,7)});i.secondary=C.fromPalette({name:"secondary",palette:e=>e.secondaryPalette,tone:e=>e.isDark?80:40,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(3,4.5,7,7),toneDeltaPair:e=>new z(i.secondaryContainer,i.secondary,10,"nearer",!1)});i.onSecondary=C.fromPalette({name:"on_secondary",palette:e=>e.secondaryPalette,tone:e=>R(e)?e.isDark?10:100:e.isDark?20:100,background:e=>i.secondary,contrastCurve:new k(4.5,7,11,21)});i.secondaryContainer=C.fromPalette({name:"secondary_container",palette:e=>e.secondaryPalette,tone:e=>{let t=e.isDark?30:90;return R(e)?e.isDark?30:85:Pt(e)?xr(e.secondaryPalette.hue,e.secondaryPalette.chroma,t,!e.isDark):t},isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.secondaryContainer,i.secondary,10,"nearer",!1)});i.onSecondaryContainer=C.fromPalette({name:"on_secondary_container",palette:e=>e.secondaryPalette,tone:e=>R(e)?e.isDark?90:10:Pt(e)?C.foregroundTone(i.secondaryContainer.tone(e),4.5):e.isDark?90:30,background:e=>i.secondaryContainer,contrastCurve:new k(3,4.5,7,11)});i.tertiary=C.fromPalette({name:"tertiary",palette:e=>e.tertiaryPalette,tone:e=>R(e)?e.isDark?90:25:e.isDark?80:40,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(3,4.5,7,7),toneDeltaPair:e=>new z(i.tertiaryContainer,i.tertiary,10,"nearer",!1)});i.onTertiary=C.fromPalette({name:"on_tertiary",palette:e=>e.tertiaryPalette,tone:e=>R(e)?e.isDark?10:90:e.isDark?20:100,background:e=>i.tertiary,contrastCurve:new k(4.5,7,11,21)});i.tertiaryContainer=C.fromPalette({name:"tertiary_container",palette:e=>e.tertiaryPalette,tone:e=>{if(R(e))return e.isDark?60:49;if(!Pt(e))return e.isDark?30:90;let t=e.tertiaryPalette.getHct(e.sourceColorHct.tone);return rt.fixIfDisliked(t).tone},isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.tertiaryContainer,i.tertiary,10,"nearer",!1)});i.onTertiaryContainer=C.fromPalette({name:"on_tertiary_container",palette:e=>e.tertiaryPalette,tone:e=>R(e)?e.isDark?0:100:Pt(e)?C.foregroundTone(i.tertiaryContainer.tone(e),4.5):e.isDark?90:30,background:e=>i.tertiaryContainer,contrastCurve:new k(3,4.5,7,11)});i.error=C.fromPalette({name:"error",palette:e=>e.errorPalette,tone:e=>e.isDark?80:40,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(3,4.5,7,7),toneDeltaPair:e=>new z(i.errorContainer,i.error,10,"nearer",!1)});i.onError=C.fromPalette({name:"on_error",palette:e=>e.errorPalette,tone:e=>e.isDark?20:100,background:e=>i.error,contrastCurve:new k(4.5,7,11,21)});i.errorContainer=C.fromPalette({name:"error_container",palette:e=>e.errorPalette,tone:e=>e.isDark?30:90,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.errorContainer,i.error,10,"nearer",!1)});i.onErrorContainer=C.fromPalette({name:"on_error_container",palette:e=>e.errorPalette,tone:e=>R(e)?e.isDark?90:10:e.isDark?90:30,background:e=>i.errorContainer,contrastCurve:new k(3,4.5,7,11)});i.primaryFixed=C.fromPalette({name:"primary_fixed",palette:e=>e.primaryPalette,tone:e=>R(e)?40:90,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.primaryFixed,i.primaryFixedDim,10,"lighter",!0)});i.primaryFixedDim=C.fromPalette({name:"primary_fixed_dim",palette:e=>e.primaryPalette,tone:e=>R(e)?30:80,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.primaryFixed,i.primaryFixedDim,10,"lighter",!0)});i.onPrimaryFixed=C.fromPalette({name:"on_primary_fixed",palette:e=>e.primaryPalette,tone:e=>R(e)?100:10,background:e=>i.primaryFixedDim,secondBackground:e=>i.primaryFixed,contrastCurve:new k(4.5,7,11,21)});i.onPrimaryFixedVariant=C.fromPalette({name:"on_primary_fixed_variant",palette:e=>e.primaryPalette,tone:e=>R(e)?90:30,background:e=>i.primaryFixedDim,secondBackground:e=>i.primaryFixed,contrastCurve:new k(3,4.5,7,11)});i.secondaryFixed=C.fromPalette({name:"secondary_fixed",palette:e=>e.secondaryPalette,tone:e=>R(e)?80:90,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.secondaryFixed,i.secondaryFixedDim,10,"lighter",!0)});i.secondaryFixedDim=C.fromPalette({name:"secondary_fixed_dim",palette:e=>e.secondaryPalette,tone:e=>R(e)?70:80,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.secondaryFixed,i.secondaryFixedDim,10,"lighter",!0)});i.onSecondaryFixed=C.fromPalette({name:"on_secondary_fixed",palette:e=>e.secondaryPalette,tone:e=>10,background:e=>i.secondaryFixedDim,secondBackground:e=>i.secondaryFixed,contrastCurve:new k(4.5,7,11,21)});i.onSecondaryFixedVariant=C.fromPalette({name:"on_secondary_fixed_variant",palette:e=>e.secondaryPalette,tone:e=>R(e)?25:30,background:e=>i.secondaryFixedDim,secondBackground:e=>i.secondaryFixed,contrastCurve:new k(3,4.5,7,11)});i.tertiaryFixed=C.fromPalette({name:"tertiary_fixed",palette:e=>e.tertiaryPalette,tone:e=>R(e)?40:90,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.tertiaryFixed,i.tertiaryFixedDim,10,"lighter",!0)});i.tertiaryFixedDim=C.fromPalette({name:"tertiary_fixed_dim",palette:e=>e.tertiaryPalette,tone:e=>R(e)?30:80,isBackground:!0,background:e=>i.highestSurface(e),contrastCurve:new k(1,1,3,4.5),toneDeltaPair:e=>new z(i.tertiaryFixed,i.tertiaryFixedDim,10,"lighter",!0)});i.onTertiaryFixed=C.fromPalette({name:"on_tertiary_fixed",palette:e=>e.tertiaryPalette,tone:e=>R(e)?100:10,background:e=>i.tertiaryFixedDim,secondBackground:e=>i.tertiaryFixed,contrastCurve:new k(4.5,7,11,21)});i.onTertiaryFixedVariant=C.fromPalette({name:"on_tertiary_fixed_variant",palette:e=>e.tertiaryPalette,tone:e=>R(e)?90:30,background:e=>i.tertiaryFixedDim,secondBackground:e=>i.tertiaryFixed,contrastCurve:new k(3,4.5,7,11)});var B=class{constructor(t){this.sourceColorArgb=t.sourceColorArgb,this.variant=t.variant,this.contrastLevel=t.contrastLevel,this.isDark=t.isDark,this.sourceColorHct=v.fromInt(t.sourceColorArgb),this.primaryPalette=t.primaryPalette,this.secondaryPalette=t.secondaryPalette,this.tertiaryPalette=t.tertiaryPalette,this.neutralPalette=t.neutralPalette,this.neutralVariantPalette=t.neutralVariantPalette,this.errorPalette=b.fromHueAndChroma(25,84)}static getRotatedHue(t,r,n){let a=t.hue;if(r.length!==n.length)throw new Error(`mismatch between hue length ${r.length} & rotations ${n.length}`);if(n.length===1)return O(t.hue+n[0]);let o=r.length;for(let s=0;s<=o-2;s++){let c=r[s],h=r[s+1];if(c<a&&a<h)return O(a+n[s])}return a}getArgb(t){return t.getArgb(this)}getHct(t){return t.getHct(this)}get primaryPaletteKeyColor(){return this.getArgb(i.primaryPaletteKeyColor)}get secondaryPaletteKeyColor(){return this.getArgb(i.secondaryPaletteKeyColor)}get tertiaryPaletteKeyColor(){return this.getArgb(i.tertiaryPaletteKeyColor)}get neutralPaletteKeyColor(){return this.getArgb(i.neutralPaletteKeyColor)}get neutralVariantPaletteKeyColor(){return this.getArgb(i.neutralVariantPaletteKeyColor)}get background(){return this.getArgb(i.background)}get onBackground(){return this.getArgb(i.onBackground)}get surface(){return this.getArgb(i.surface)}get surfaceDim(){return this.getArgb(i.surfaceDim)}get surfaceBright(){return this.getArgb(i.surfaceBright)}get surfaceContainerLowest(){return this.getArgb(i.surfaceContainerLowest)}get surfaceContainerLow(){return this.getArgb(i.surfaceContainerLow)}get surfaceContainer(){return this.getArgb(i.surfaceContainer)}get surfaceContainerHigh(){return this.getArgb(i.surfaceContainerHigh)}get surfaceContainerHighest(){return this.getArgb(i.surfaceContainerHighest)}get onSurface(){return this.getArgb(i.onSurface)}get surfaceVariant(){return this.getArgb(i.surfaceVariant)}get onSurfaceVariant(){return this.getArgb(i.onSurfaceVariant)}get inverseSurface(){return this.getArgb(i.inverseSurface)}get inverseOnSurface(){return this.getArgb(i.inverseOnSurface)}get outline(){return this.getArgb(i.outline)}get outlineVariant(){return this.getArgb(i.outlineVariant)}get shadow(){return this.getArgb(i.shadow)}get scrim(){return this.getArgb(i.scrim)}get surfaceTint(){return this.getArgb(i.surfaceTint)}get primary(){return this.getArgb(i.primary)}get onPrimary(){return this.getArgb(i.onPrimary)}get primaryContainer(){return this.getArgb(i.primaryContainer)}get onPrimaryContainer(){return this.getArgb(i.onPrimaryContainer)}get inversePrimary(){return this.getArgb(i.inversePrimary)}get secondary(){return this.getArgb(i.secondary)}get onSecondary(){return this.getArgb(i.onSecondary)}get secondaryContainer(){return this.getArgb(i.secondaryContainer)}get onSecondaryContainer(){return this.getArgb(i.onSecondaryContainer)}get tertiary(){return this.getArgb(i.tertiary)}get onTertiary(){return this.getArgb(i.onTertiary)}get tertiaryContainer(){return this.getArgb(i.tertiaryContainer)}get onTertiaryContainer(){return this.getArgb(i.onTertiaryContainer)}get error(){return this.getArgb(i.error)}get onError(){return this.getArgb(i.onError)}get errorContainer(){return this.getArgb(i.errorContainer)}get onErrorContainer(){return this.getArgb(i.onErrorContainer)}get primaryFixed(){return this.getArgb(i.primaryFixed)}get primaryFixedDim(){return this.getArgb(i.primaryFixedDim)}get onPrimaryFixed(){return this.getArgb(i.onPrimaryFixed)}get onPrimaryFixedVariant(){return this.getArgb(i.onPrimaryFixedVariant)}get secondaryFixed(){return this.getArgb(i.secondaryFixed)}get secondaryFixedDim(){return this.getArgb(i.secondaryFixedDim)}get onSecondaryFixed(){return this.getArgb(i.onSecondaryFixed)}get onSecondaryFixedVariant(){return this.getArgb(i.onSecondaryFixedVariant)}get tertiaryFixed(){return this.getArgb(i.tertiaryFixed)}get tertiaryFixedDim(){return this.getArgb(i.tertiaryFixedDim)}get onTertiaryFixed(){return this.getArgb(i.onTertiaryFixed)}get onTertiaryFixedVariant(){return this.getArgb(i.onTertiaryFixedVariant)}};var U=class e{static of(t){return new e(t,!1)}static contentOf(t){return new e(t,!0)}static fromColors(t){return e.createPaletteFromColors(!1,t)}static contentFromColors(t){return e.createPaletteFromColors(!0,t)}static createPaletteFromColors(t,r){let n=new e(r.primary,t);if(r.secondary){let a=new e(r.secondary,t);n.a2=a.a1}if(r.tertiary){let a=new e(r.tertiary,t);n.a3=a.a1}if(r.error){let a=new e(r.error,t);n.error=a.a1}if(r.neutral){let a=new e(r.neutral,t);n.n1=a.n1}if(r.neutralVariant){let a=new e(r.neutralVariant,t);n.n2=a.n2}return n}constructor(t,r){let n=v.fromInt(t),a=n.hue,o=n.chroma;r?(this.a1=b.fromHueAndChroma(a,o),this.a2=b.fromHueAndChroma(a,o/3),this.a3=b.fromHueAndChroma(a+60,o/2),this.n1=b.fromHueAndChroma(a,Math.min(o/12,4)),this.n2=b.fromHueAndChroma(a,Math.min(o/6,8))):(this.a1=b.fromHueAndChroma(a,Math.max(48,o)),this.a2=b.fromHueAndChroma(a,16),this.a3=b.fromHueAndChroma(a+60,24),this.n1=b.fromHueAndChroma(a,4),this.n2=b.fromHueAndChroma(a,8)),this.error=b.fromHueAndChroma(25,84)}};var Ut=class{fromInt(t){return Tt(t)}toInt(t){return te(t[0],t[1],t[2])}distance(t,r){let n=t[0]-r[0],a=t[1]-r[1],o=t[2]-r[2];return n*n+a*a+o*o}};var Pr=10,Cr=3,St=class{static quantize(t,r,n){let a=new Map,o=new Array,s=new Array,c=new Ut,h=0;for(let y=0;y<t.length;y++){let x=t[y],T=a.get(x);T===void 0?(h++,o.push(c.fromInt(x)),s.push(x),a.set(x,1)):a.set(x,T+1)}let u=new Array;for(let y=0;y<h;y++){let x=s[y],T=a.get(x);T!==void 0&&(u[y]=T)}let l=Math.min(n,h);r.length>0&&(l=Math.min(l,r.length));let m=new Array;for(let y=0;y<r.length;y++)m.push(c.fromInt(r[y]));let d=l-m.length;if(r.length===0&&d>0)for(let y=0;y<d;y++){let x=Math.random()*100,T=Math.random()*201+-100,I=Math.random()*201+-100;m.push(new Array(x,T,I))}let g=new Array;for(let y=0;y<h;y++)g.push(Math.floor(Math.random()*l));let p=new Array;for(let y=0;y<l;y++){p.push(new Array);for(let x=0;x<l;x++)p[y].push(0)}let f=new Array;for(let y=0;y<l;y++){f.push(new Array);for(let x=0;x<l;x++)f[y].push(new ae)}let A=new Array;for(let y=0;y<l;y++)A.push(0);for(let y=0;y<Pr;y++){for(let P=0;P<l;P++){for(let M=P+1;M<l;M++){let S=c.distance(m[P],m[M]);f[M][P].distance=S,f[M][P].index=P,f[P][M].distance=S,f[P][M].index=M}f[P].sort();for(let M=0;M<l;M++)p[P][M]=f[P][M].index}let x=0;for(let P=0;P<h;P++){let M=o[P],S=g[P],w=m[S],G=c.distance(M,w),K=G,j=-1;for(let E=0;E<l;E++){if(f[S][E].distance>=4*G)continue;let lt=c.distance(M,m[E]);lt<K&&(K=lt,j=E)}j!==-1&&Math.abs(Math.sqrt(K)-Math.sqrt(G))>Cr&&(x++,g[P]=j)}if(x===0&&y!==0)break;let T=new Array(l).fill(0),I=new Array(l).fill(0),F=new Array(l).fill(0);for(let P=0;P<l;P++)A[P]=0;for(let P=0;P<h;P++){let M=g[P],S=o[P],w=u[P];A[M]+=w,T[M]+=S[0]*w,I[M]+=S[1]*w,F[M]+=S[2]*w}for(let P=0;P<l;P++){let M=A[P];if(M===0){m[P]=[0,0,0];continue}let S=T[P]/M,w=I[P]/M,G=F[P]/M;m[P]=[S,w,G]}}let D=new Map;for(let y=0;y<l;y++){let x=A[y];if(x===0)continue;let T=c.toInt(m[y]);D.has(T)||D.set(T,x)}return D}},ae=class{constructor(){this.distance=-1,this.index=-1}};var vt=class{static quantize(t){let r=new Map;for(let n=0;n<t.length;n++){let a=t[n];It(a)<255||r.set(a,(r.get(a)??0)+1)}return r}};var Gt=5,tt=33,Ft=35937,$={RED:"red",GREEN:"green",BLUE:"blue"},Bt=class{constructor(t=[],r=[],n=[],a=[],o=[],s=[]){this.weights=t,this.momentsR=r,this.momentsG=n,this.momentsB=a,this.moments=o,this.cubes=s}quantize(t,r){this.constructHistogram(t),this.computeMoments();let n=this.createBoxes(r);return this.createResult(n.resultCount)}constructHistogram(t){this.weights=Array.from({length:Ft}).fill(0),this.momentsR=Array.from({length:Ft}).fill(0),this.momentsG=Array.from({length:Ft}).fill(0),this.momentsB=Array.from({length:Ft}).fill(0),this.moments=Array.from({length:Ft}).fill(0);let r=vt.quantize(t);for(let[n,a]of r.entries()){let o=it(n),s=ct(n),c=ht(n),h=8-Gt,u=(o>>h)+1,l=(s>>h)+1,m=(c>>h)+1,d=this.getIndex(u,l,m);this.weights[d]=(this.weights[d]??0)+a,this.momentsR[d]+=a*o,this.momentsG[d]+=a*s,this.momentsB[d]+=a*c,this.moments[d]+=a*(o*o+s*s+c*c)}}computeMoments(){for(let t=1;t<tt;t++){let r=Array.from({length:tt}).fill(0),n=Array.from({length:tt}).fill(0),a=Array.from({length:tt}).fill(0),o=Array.from({length:tt}).fill(0),s=Array.from({length:tt}).fill(0);for(let c=1;c<tt;c++){let h=0,u=0,l=0,m=0,d=0;for(let g=1;g<tt;g++){let p=this.getIndex(t,c,g);h+=this.weights[p],u+=this.momentsR[p],l+=this.momentsG[p],m+=this.momentsB[p],d+=this.moments[p],r[g]+=h,n[g]+=u,a[g]+=l,o[g]+=m,s[g]+=d;let f=this.getIndex(t-1,c,g);this.weights[p]=this.weights[f]+r[g],this.momentsR[p]=this.momentsR[f]+n[g],this.momentsG[p]=this.momentsG[f]+a[g],this.momentsB[p]=this.momentsB[f]+o[g],this.moments[p]=this.moments[f]+s[g]}}}}createBoxes(t){this.cubes=Array.from({length:t}).fill(0).map(()=>new oe);let r=Array.from({length:t}).fill(0);this.cubes[0].r0=0,this.cubes[0].g0=0,this.cubes[0].b0=0,this.cubes[0].r1=tt-1,this.cubes[0].g1=tt-1,this.cubes[0].b1=tt-1;let n=t,a=0;for(let o=1;o<t;o++){this.cut(this.cubes[a],this.cubes[o])?(r[a]=this.cubes[a].vol>1?this.variance(this.cubes[a]):0,r[o]=this.cubes[o].vol>1?this.variance(this.cubes[o]):0):(r[a]=0,o--),a=0;let s=r[0];for(let c=1;c<=o;c++)r[c]>s&&(s=r[c],a=c);if(s<=0){n=o+1;break}}return new se(t,n)}createResult(t){let r=[];for(let n=0;n<t;++n){let a=this.cubes[n],o=this.volume(a,this.weights);if(o>0){let s=Math.round(this.volume(a,this.momentsR)/o),c=Math.round(this.volume(a,this.momentsG)/o),h=Math.round(this.volume(a,this.momentsB)/o),u=255<<24|(s&255)<<16|(c&255)<<8|h&255;r.push(u)}}return r}variance(t){let r=this.volume(t,this.momentsR),n=this.volume(t,this.momentsG),a=this.volume(t,this.momentsB),o=this.moments[this.getIndex(t.r1,t.g1,t.b1)]-this.moments[this.getIndex(t.r1,t.g1,t.b0)]-this.moments[this.getIndex(t.r1,t.g0,t.b1)]+this.moments[this.getIndex(t.r1,t.g0,t.b0)]-this.moments[this.getIndex(t.r0,t.g1,t.b1)]+this.moments[this.getIndex(t.r0,t.g1,t.b0)]+this.moments[this.getIndex(t.r0,t.g0,t.b1)]-this.moments[this.getIndex(t.r0,t.g0,t.b0)],s=r*r+n*n+a*a,c=this.volume(t,this.weights);return o-s/c}cut(t,r){let n=this.volume(t,this.momentsR),a=this.volume(t,this.momentsG),o=this.volume(t,this.momentsB),s=this.volume(t,this.weights),c=this.maximize(t,$.RED,t.r0+1,t.r1,n,a,o,s),h=this.maximize(t,$.GREEN,t.g0+1,t.g1,n,a,o,s),u=this.maximize(t,$.BLUE,t.b0+1,t.b1,n,a,o,s),l,m=c.maximum,d=h.maximum,g=u.maximum;if(m>=d&&m>=g){if(c.cutLocation<0)return!1;l=$.RED}else d>=m&&d>=g?l=$.GREEN:l=$.BLUE;switch(r.r1=t.r1,r.g1=t.g1,r.b1=t.b1,l){case $.RED:t.r1=c.cutLocation,r.r0=t.r1,r.g0=t.g0,r.b0=t.b0;break;case $.GREEN:t.g1=h.cutLocation,r.r0=t.r0,r.g0=t.g1,r.b0=t.b0;break;case $.BLUE:t.b1=u.cutLocation,r.r0=t.r0,r.g0=t.g0,r.b0=t.b1;break;default:throw new Error("unexpected direction "+l)}return t.vol=(t.r1-t.r0)*(t.g1-t.g0)*(t.b1-t.b0),r.vol=(r.r1-r.r0)*(r.g1-r.g0)*(r.b1-r.b0),!0}maximize(t,r,n,a,o,s,c,h){let u=this.bottom(t,r,this.momentsR),l=this.bottom(t,r,this.momentsG),m=this.bottom(t,r,this.momentsB),d=this.bottom(t,r,this.weights),g=0,p=-1,f=0,A=0,D=0,y=0;for(let x=n;x<a;x++){if(f=u+this.top(t,r,x,this.momentsR),A=l+this.top(t,r,x,this.momentsG),D=m+this.top(t,r,x,this.momentsB),y=d+this.top(t,r,x,this.weights),y===0)continue;let T=(f*f+A*A+D*D)*1,I=y*1,F=T/I;f=o-f,A=s-A,D=c-D,y=h-y,y!==0&&(T=(f*f+A*A+D*D)*1,I=y*1,F+=T/I,F>g&&(g=F,p=x))}return new ie(p,g)}volume(t,r){return r[this.getIndex(t.r1,t.g1,t.b1)]-r[this.getIndex(t.r1,t.g1,t.b0)]-r[this.getIndex(t.r1,t.g0,t.b1)]+r[this.getIndex(t.r1,t.g0,t.b0)]-r[this.getIndex(t.r0,t.g1,t.b1)]+r[this.getIndex(t.r0,t.g1,t.b0)]+r[this.getIndex(t.r0,t.g0,t.b1)]-r[this.getIndex(t.r0,t.g0,t.b0)]}bottom(t,r,n){switch(r){case $.RED:return-n[this.getIndex(t.r0,t.g1,t.b1)]+n[this.getIndex(t.r0,t.g1,t.b0)]+n[this.getIndex(t.r0,t.g0,t.b1)]-n[this.getIndex(t.r0,t.g0,t.b0)];case $.GREEN:return-n[this.getIndex(t.r1,t.g0,t.b1)]+n[this.getIndex(t.r1,t.g0,t.b0)]+n[this.getIndex(t.r0,t.g0,t.b1)]-n[this.getIndex(t.r0,t.g0,t.b0)];case $.BLUE:return-n[this.getIndex(t.r1,t.g1,t.b0)]+n[this.getIndex(t.r1,t.g0,t.b0)]+n[this.getIndex(t.r0,t.g1,t.b0)]-n[this.getIndex(t.r0,t.g0,t.b0)];default:throw new Error("unexpected direction $direction")}}top(t,r,n,a){switch(r){case $.RED:return a[this.getIndex(n,t.g1,t.b1)]-a[this.getIndex(n,t.g1,t.b0)]-a[this.getIndex(n,t.g0,t.b1)]+a[this.getIndex(n,t.g0,t.b0)];case $.GREEN:return a[this.getIndex(t.r1,n,t.b1)]-a[this.getIndex(t.r1,n,t.b0)]-a[this.getIndex(t.r0,n,t.b1)]+a[this.getIndex(t.r0,n,t.b0)];case $.BLUE:return a[this.getIndex(t.r1,t.g1,n)]-a[this.getIndex(t.r1,t.g0,n)]-a[this.getIndex(t.r0,t.g1,n)]+a[this.getIndex(t.r0,t.g0,n)];default:throw new Error("unexpected direction $direction")}}getIndex(t,r,n){return(t<<Gt*2)+(t<<Gt+1)+t+(r<<Gt)+r+n}},oe=class{constructor(t=0,r=0,n=0,a=0,o=0,s=0,c=0){this.r0=t,this.r1=r,this.g0=n,this.g1=a,this.b0=o,this.b1=s,this.vol=c}},se=class{constructor(t,r){this.requestedCount=t,this.resultCount=r}},ie=class{constructor(t,r){this.cutLocation=t,this.maximum=r}};var Ht=class{static quantize(t,r){let a=new Bt().quantize(t,r);return St.quantize(t,a,r)}};var Ct=class e{get primary(){return this.props.primary}get onPrimary(){return this.props.onPrimary}get primaryContainer(){return this.props.primaryContainer}get onPrimaryContainer(){return this.props.onPrimaryContainer}get secondary(){return this.props.secondary}get onSecondary(){return this.props.onSecondary}get secondaryContainer(){return this.props.secondaryContainer}get onSecondaryContainer(){return this.props.onSecondaryContainer}get tertiary(){return this.props.tertiary}get onTertiary(){return this.props.onTertiary}get tertiaryContainer(){return this.props.tertiaryContainer}get onTertiaryContainer(){return this.props.onTertiaryContainer}get error(){return this.props.error}get onError(){return this.props.onError}get errorContainer(){return this.props.errorContainer}get onErrorContainer(){return this.props.onErrorContainer}get background(){return this.props.background}get onBackground(){return this.props.onBackground}get surface(){return this.props.surface}get onSurface(){return this.props.onSurface}get surfaceVariant(){return this.props.surfaceVariant}get onSurfaceVariant(){return this.props.onSurfaceVariant}get outline(){return this.props.outline}get outlineVariant(){return this.props.outlineVariant}get shadow(){return this.props.shadow}get scrim(){return this.props.scrim}get inverseSurface(){return this.props.inverseSurface}get inverseOnSurface(){return this.props.inverseOnSurface}get inversePrimary(){return this.props.inversePrimary}static light(t){return e.lightFromCorePalette(U.of(t))}static dark(t){return e.darkFromCorePalette(U.of(t))}static lightContent(t){return e.lightFromCorePalette(U.contentOf(t))}static darkContent(t){return e.darkFromCorePalette(U.contentOf(t))}static lightFromCorePalette(t){return new e({primary:t.a1.tone(40),onPrimary:t.a1.tone(100),primaryContainer:t.a1.tone(90),onPrimaryContainer:t.a1.tone(10),secondary:t.a2.tone(40),onSecondary:t.a2.tone(100),secondaryContainer:t.a2.tone(90),onSecondaryContainer:t.a2.tone(10),tertiary:t.a3.tone(40),onTertiary:t.a3.tone(100),tertiaryContainer:t.a3.tone(90),onTertiaryContainer:t.a3.tone(10),error:t.error.tone(40),onError:t.error.tone(100),errorContainer:t.error.tone(90),onErrorContainer:t.error.tone(10),background:t.n1.tone(99),onBackground:t.n1.tone(10),surface:t.n1.tone(99),onSurface:t.n1.tone(10),surfaceVariant:t.n2.tone(90),onSurfaceVariant:t.n2.tone(30),outline:t.n2.tone(50),outlineVariant:t.n2.tone(80),shadow:t.n1.tone(0),scrim:t.n1.tone(0),inverseSurface:t.n1.tone(20),inverseOnSurface:t.n1.tone(95),inversePrimary:t.a1.tone(80)})}static darkFromCorePalette(t){return new e({primary:t.a1.tone(80),onPrimary:t.a1.tone(20),primaryContainer:t.a1.tone(30),onPrimaryContainer:t.a1.tone(90),secondary:t.a2.tone(80),onSecondary:t.a2.tone(20),secondaryContainer:t.a2.tone(30),onSecondaryContainer:t.a2.tone(90),tertiary:t.a3.tone(80),onTertiary:t.a3.tone(20),tertiaryContainer:t.a3.tone(30),onTertiaryContainer:t.a3.tone(90),error:t.error.tone(80),onError:t.error.tone(20),errorContainer:t.error.tone(30),onErrorContainer:t.error.tone(80),background:t.n1.tone(10),onBackground:t.n1.tone(90),surface:t.n1.tone(10),onSurface:t.n1.tone(90),surfaceVariant:t.n2.tone(30),onSurfaceVariant:t.n2.tone(80),outline:t.n2.tone(60),outlineVariant:t.n2.tone(30),shadow:t.n1.tone(0),scrim:t.n1.tone(0),inverseSurface:t.n1.tone(90),inverseOnSurface:t.n1.tone(20),inversePrimary:t.a1.tone(40)})}constructor(t){this.props=t}toJSON(){return{...this.props}}};var ce=class e{get colorAccentPrimary(){return this.props.colorAccentPrimary}get colorAccentPrimaryVariant(){return this.props.colorAccentPrimaryVariant}get colorAccentSecondary(){return this.props.colorAccentSecondary}get colorAccentSecondaryVariant(){return this.props.colorAccentSecondaryVariant}get colorAccentTertiary(){return this.props.colorAccentTertiary}get colorAccentTertiaryVariant(){return this.props.colorAccentTertiaryVariant}get textColorPrimary(){return this.props.textColorPrimary}get textColorSecondary(){return this.props.textColorSecondary}get textColorTertiary(){return this.props.textColorTertiary}get textColorPrimaryInverse(){return this.props.textColorPrimaryInverse}get textColorSecondaryInverse(){return this.props.textColorSecondaryInverse}get textColorTertiaryInverse(){return this.props.textColorTertiaryInverse}get colorBackground(){return this.props.colorBackground}get colorBackgroundFloating(){return this.props.colorBackgroundFloating}get colorSurface(){return this.props.colorSurface}get colorSurfaceVariant(){return this.props.colorSurfaceVariant}get colorSurfaceHighlight(){return this.props.colorSurfaceHighlight}get surfaceHeader(){return this.props.surfaceHeader}get underSurface(){return this.props.underSurface}get offState(){return this.props.offState}get accentSurface(){return this.props.accentSurface}get textPrimaryOnAccent(){return this.props.textPrimaryOnAccent}get textSecondaryOnAccent(){return this.props.textSecondaryOnAccent}get volumeBackground(){return this.props.volumeBackground}get scrim(){return this.props.scrim}static light(t){let r=U.of(t);return e.lightFromCorePalette(r)}static dark(t){let r=U.of(t);return e.darkFromCorePalette(r)}static lightContent(t){let r=U.contentOf(t);return e.lightFromCorePalette(r)}static darkContent(t){let r=U.contentOf(t);return e.darkFromCorePalette(r)}static lightFromCorePalette(t){return new e({colorAccentPrimary:t.a1.tone(90),colorAccentPrimaryVariant:t.a1.tone(40),colorAccentSecondary:t.a2.tone(90),colorAccentSecondaryVariant:t.a2.tone(40),colorAccentTertiary:t.a3.tone(90),colorAccentTertiaryVariant:t.a3.tone(40),textColorPrimary:t.n1.tone(10),textColorSecondary:t.n2.tone(30),textColorTertiary:t.n2.tone(50),textColorPrimaryInverse:t.n1.tone(95),textColorSecondaryInverse:t.n1.tone(80),textColorTertiaryInverse:t.n1.tone(60),colorBackground:t.n1.tone(95),colorBackgroundFloating:t.n1.tone(98),colorSurface:t.n1.tone(98),colorSurfaceVariant:t.n1.tone(90),colorSurfaceHighlight:t.n1.tone(100),surfaceHeader:t.n1.tone(90),underSurface:t.n1.tone(0),offState:t.n1.tone(20),accentSurface:t.a2.tone(95),textPrimaryOnAccent:t.n1.tone(10),textSecondaryOnAccent:t.n2.tone(30),volumeBackground:t.n1.tone(25),scrim:t.n1.tone(80)})}static darkFromCorePalette(t){return new e({colorAccentPrimary:t.a1.tone(90),colorAccentPrimaryVariant:t.a1.tone(70),colorAccentSecondary:t.a2.tone(90),colorAccentSecondaryVariant:t.a2.tone(70),colorAccentTertiary:t.a3.tone(90),colorAccentTertiaryVariant:t.a3.tone(70),textColorPrimary:t.n1.tone(95),textColorSecondary:t.n2.tone(80),textColorTertiary:t.n2.tone(60),textColorPrimaryInverse:t.n1.tone(10),textColorSecondaryInverse:t.n1.tone(30),textColorTertiaryInverse:t.n1.tone(50),colorBackground:t.n1.tone(10),colorBackgroundFloating:t.n1.tone(10),colorSurface:t.n1.tone(20),colorSurfaceVariant:t.n1.tone(30),colorSurfaceHighlight:t.n1.tone(35),surfaceHeader:t.n1.tone(30),underSurface:t.n1.tone(0),offState:t.n1.tone(20),accentSurface:t.a2.tone(95),textPrimaryOnAccent:t.n1.tone(10),textSecondaryOnAccent:t.n2.tone(30),volumeBackground:t.n1.tone(25),scrim:t.n1.tone(80)})}constructor(t){this.props=t}toJSON(){return{...this.props}}};var ft=class e{constructor(t){this.input=t,this.hctsByTempCache=[],this.hctsByHueCache=[],this.tempsByHctCache=new Map,this.inputRelativeTemperatureCache=-1,this.complementCache=null}get hctsByTemp(){if(this.hctsByTempCache.length>0)return this.hctsByTempCache;let t=this.hctsByHue.concat([this.input]),r=this.tempsByHct;return t.sort((n,a)=>r.get(n)-r.get(a)),this.hctsByTempCache=t,t}get warmest(){return this.hctsByTemp[this.hctsByTemp.length-1]}get coldest(){return this.hctsByTemp[0]}analogous(t=5,r=12){let n=Math.round(this.input.hue),a=this.hctsByHue[n],o=this.relativeTemperature(a),s=[a],c=0;for(let p=0;p<360;p++){let f=mt(n+p),A=this.hctsByHue[f],D=this.relativeTemperature(A),y=Math.abs(D-o);o=D,c+=y}let h=1,u=c/r,l=0;for(o=this.relativeTemperature(a);s.length<r;){let p=mt(n+h),f=this.hctsByHue[p],A=this.relativeTemperature(f),D=Math.abs(A-o);l+=D;let y=s.length*u,x=l>=y,T=1;for(;x&&s.length<r;){s.push(f);let I=(s.length+T)*u;x=l>=I,T++}if(o=A,h++,h>360){for(;s.length<r;)s.push(f);break}}let m=[this.input],d=Math.floor((t-1)/2);for(let p=1;p<d+1;p++){let f=0-p;for(;f<0;)f=s.length+f;f>=s.length&&(f=f%s.length),m.splice(0,0,s[f])}let g=t-d-1;for(let p=1;p<g+1;p++){let f=p;for(;f<0;)f=s.length+f;f>=s.length&&(f=f%s.length),m.push(s[f])}return m}get complement(){if(this.complementCache!=null)return this.complementCache;let t=this.coldest.hue,r=this.tempsByHct.get(this.coldest),n=this.warmest.hue,o=this.tempsByHct.get(this.warmest)-r,s=e.isBetween(this.input.hue,t,n),c=s?n:t,h=s?t:n,u=1,l=1e3,m=this.hctsByHue[Math.round(this.input.hue)],d=1-this.inputRelativeTemperature;for(let g=0;g<=360;g+=1){let p=O(c+u*g);if(!e.isBetween(p,c,h))continue;let f=this.hctsByHue[Math.round(p)],A=(this.tempsByHct.get(f)-r)/o,D=Math.abs(d-A);D<l&&(l=D,m=f)}return this.complementCache=m,this.complementCache}relativeTemperature(t){let r=this.tempsByHct.get(this.warmest)-this.tempsByHct.get(this.coldest),n=this.tempsByHct.get(t)-this.tempsByHct.get(this.coldest);return r===0?.5:n/r}get inputRelativeTemperature(){return this.inputRelativeTemperatureCache>=0?this.inputRelativeTemperatureCache:(this.inputRelativeTemperatureCache=this.relativeTemperature(this.input),this.inputRelativeTemperatureCache)}get tempsByHct(){if(this.tempsByHctCache.size>0)return this.tempsByHctCache;let t=this.hctsByHue.concat([this.input]),r=new Map;for(let n of t)r.set(n,e.rawTemperature(n));return this.tempsByHctCache=r,r}get hctsByHue(){if(this.hctsByHueCache.length>0)return this.hctsByHueCache;let t=[];for(let r=0;r<=360;r+=1){let n=v.from(r,this.input.chroma,this.input.tone);t.push(n)}return this.hctsByHueCache=t,this.hctsByHueCache}static isBetween(t,r,n){return r<n?r<=t&&t<=n:r<=t||t<=n}static rawTemperature(t){let r=Tt(t.toInt()),n=O(Math.atan2(r[2],r[1])*180/Math.PI),a=Math.sqrt(r[1]*r[1]+r[2]*r[2]);return-.5+.02*Math.pow(a,1.07)*Math.cos(O(n-50)*Math.PI/180)}};var he=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.CONTENT,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,t.chroma),secondaryPalette:b.fromHueAndChroma(t.hue,Math.max(t.chroma-32,t.chroma*.5)),tertiaryPalette:b.fromInt(rt.fixIfDisliked(new ft(t).analogous(3,6)[2]).toInt()),neutralPalette:b.fromHueAndChroma(t.hue,t.chroma/8),neutralVariantPalette:b.fromHueAndChroma(t.hue,t.chroma/8+4)})}};var At=class e extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.EXPRESSIVE,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(O(t.hue+240),40),secondaryPalette:b.fromHueAndChroma(B.getRotatedHue(t,e.hues,e.secondaryRotations),24),tertiaryPalette:b.fromHueAndChroma(B.getRotatedHue(t,e.hues,e.tertiaryRotations),32),neutralPalette:b.fromHueAndChroma(t.hue+15,8),neutralVariantPalette:b.fromHueAndChroma(t.hue+15,12)})}};At.hues=[0,21,51,121,151,191,271,321,360];At.secondaryRotations=[45,95,45,20,45,90,45,45,45];At.tertiaryRotations=[120,120,20,45,20,15,20,120,120];var le=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.FIDELITY,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,t.chroma),secondaryPalette:b.fromHueAndChroma(t.hue,Math.max(t.chroma-32,t.chroma*.5)),tertiaryPalette:b.fromInt(rt.fixIfDisliked(new ft(t).complement).toInt()),neutralPalette:b.fromHueAndChroma(t.hue,t.chroma/8),neutralVariantPalette:b.fromHueAndChroma(t.hue,t.chroma/8+4)})}};var ue=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.FRUIT_SALAD,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(O(t.hue-50),48),secondaryPalette:b.fromHueAndChroma(O(t.hue-50),36),tertiaryPalette:b.fromHueAndChroma(t.hue,36),neutralPalette:b.fromHueAndChroma(t.hue,10),neutralVariantPalette:b.fromHueAndChroma(t.hue,16)})}};var me=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.MONOCHROME,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,0),secondaryPalette:b.fromHueAndChroma(t.hue,0),tertiaryPalette:b.fromHueAndChroma(t.hue,0),neutralPalette:b.fromHueAndChroma(t.hue,0),neutralVariantPalette:b.fromHueAndChroma(t.hue,0)})}};var fe=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.NEUTRAL,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,12),secondaryPalette:b.fromHueAndChroma(t.hue,8),tertiaryPalette:b.fromHueAndChroma(t.hue,16),neutralPalette:b.fromHueAndChroma(t.hue,2),neutralVariantPalette:b.fromHueAndChroma(t.hue,2)})}};var ge=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.RAINBOW,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,48),secondaryPalette:b.fromHueAndChroma(t.hue,16),tertiaryPalette:b.fromHueAndChroma(O(t.hue+60),24),neutralPalette:b.fromHueAndChroma(t.hue,0),neutralVariantPalette:b.fromHueAndChroma(t.hue,0)})}};var pe=class extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.TONAL_SPOT,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,36),secondaryPalette:b.fromHueAndChroma(t.hue,16),tertiaryPalette:b.fromHueAndChroma(O(t.hue+60),24),neutralPalette:b.fromHueAndChroma(t.hue,6),neutralVariantPalette:b.fromHueAndChroma(t.hue,8)})}};var kt=class e extends B{constructor(t,r,n){super({sourceColorArgb:t.toInt(),variant:H.VIBRANT,contrastLevel:n,isDark:r,primaryPalette:b.fromHueAndChroma(t.hue,200),secondaryPalette:b.fromHueAndChroma(B.getRotatedHue(t,e.hues,e.secondaryRotations),24),tertiaryPalette:b.fromHueAndChroma(B.getRotatedHue(t,e.hues,e.tertiaryRotations),32),neutralPalette:b.fromHueAndChroma(t.hue,10),neutralVariantPalette:b.fromHueAndChroma(t.hue,12)})}};kt.hues=[0,41,61,101,131,181,251,301,360];kt.secondaryRotations=[18,15,10,12,15,18,15,12,12];kt.tertiaryRotations=[35,30,20,25,30,35,30,25,25];var Ar={desired:4,fallbackColorARGB:4282549748,filter:!0};function kr(e,t){return e.score>t.score?-1:e.score<t.score?1:0}var et=class e{constructor(){}static score(t,r){let{desired:n,fallbackColorARGB:a,filter:o}={...Ar,...r},s=[],c=new Array(360).fill(0),h=0;for(let[g,p]of t.entries()){let f=v.fromInt(g);s.push(f);let A=Math.floor(f.hue);c[A]+=p,h+=p}let u=new Array(360).fill(0);for(let g=0;g<360;g++){let p=c[g]/h;for(let f=g-14;f<g+16;f++){let A=mt(f);u[A]+=p}}let l=new Array;for(let g of s){let p=mt(Math.round(g.hue)),f=u[p];if(o&&(g.chroma<e.CUTOFF_CHROMA||f<=e.CUTOFF_EXCITED_PROPORTION))continue;let A=f*100*e.WEIGHT_PROPORTION,D=g.chroma<e.TARGET_CHROMA?e.WEIGHT_CHROMA_BELOW:e.WEIGHT_CHROMA_ABOVE,y=(g.chroma-e.TARGET_CHROMA)*D,x=A+y;l.push({hct:g,score:x})}l.sort(kr);let m=[];for(let g=90;g>=15;g--){m.length=0;for(let{hct:p}of l)if(m.find(A=>Mt(p.hue,A.hue)<g)||m.push(p),m.length>=n)break;if(m.length>=n)break}let d=[];m.length===0&&d.push(a);for(let g of m)d.push(g.toInt());return d}};et.TARGET_CHROMA=48;et.WEIGHT_PROPORTION=.7;et.WEIGHT_CHROMA_ABOVE=.3;et.WEIGHT_CHROMA_BELOW=.1;et.CUTOFF_CHROMA=5;et.CUTOFF_EXCITED_PROPORTION=.01;function qt(e){let t=it(e),r=ct(e),n=ht(e),a=[t.toString(16),r.toString(16),n.toString(16)];for(let[o,s]of a.entries())s.length===1&&(a[o]="0"+s);return"#"+a.join("")}function Mr(e){e=e.replace("#","");let t=e.length===3,r=e.length===6,n=e.length===8;if(!t&&!r&&!n)throw new Error("unexpected hex "+e);let a=0,o=0,s=0;return t?(a=nt(e.slice(0,1).repeat(2)),o=nt(e.slice(1,2).repeat(2)),s=nt(e.slice(2,3).repeat(2))):r?(a=nt(e.slice(0,2)),o=nt(e.slice(2,4)),s=nt(e.slice(4,6))):n&&(a=nt(e.slice(2,4)),o=nt(e.slice(4,6)),s=nt(e.slice(6,8))),(255<<24|(a&255)<<16|(o&255)<<8|s&255)>>>0}function nt(e){return parseInt(e,16)}async function de(e){let t=await new Promise((s,c)=>{let h=document.createElement("canvas"),u=h.getContext("2d");if(!u){c(new Error("Could not get canvas context"));return}let l=()=>{h.width=e.width,h.height=e.height,u.drawImage(e,0,0);let d=[0,0,e.width,e.height],g=e.dataset.area;g&&/^\d+(\s*,\s*\d+){3}$/.test(g)&&(d=g.split(/\s*,\s*/).map(y=>parseInt(y,10)));let[p,f,A,D]=d;s(u.getImageData(p,f,A,D).data)},m=()=>{c(new Error("Image load failed"))};e.complete?l():(e.onload=l,e.onerror=m)}),r=[];for(let s=0;s<t.length;s+=4){let c=t[s],h=t[s+1],u=t[s+2];if(t[s+3]<255)continue;let m=yt(c,h,u);r.push(m)}let n=Ht.quantize(r,128);return et.score(n)[0]}function Ve(e,t=[]){let r=U.of(e);return{source:e,schemes:{light:Ct.light(e),dark:Ct.dark(e)},palettes:{primary:r.a1,secondary:r.a2,tertiary:r.a3,neutral:r.n1,neutralVariant:r.n2,error:r.error},customColors:t.map(n=>ze(e,n))}}async function Dr(e,t=[]){let r=await de(e);return Ve(r,t)}function ze(e,t){let r=t.value,n=r,a=e;t.blend&&(r=wt.harmonize(n,a));let s=U.of(r).a1;return{color:t,value:r,light:{color:s.tone(40),onColor:s.tone(100),colorContainer:s.tone(90),onColorContainer:s.tone(10)},dark:{color:s.tone(80),onColor:s.tone(20),colorContainer:s.tone(30),onColorContainer:s.tone(90)}}}function Ir(e,t){let r=t?.target||document.body,a=t?.dark??!1?e.schemes.dark:e.schemes.light;if(ye(r,a),t?.brightnessSuffix&&(ye(r,e.schemes.dark,"-dark"),ye(r,e.schemes.light,"-light")),t?.paletteTones){let o=t?.paletteTones??[];for(let[s,c]of Object.entries(e.palettes)){let h=s.replace(/([a-z])([A-Z])/g,"$1-$2").toLowerCase();for(let u of o){let l=`--md-ref-palette-${h}-${h}${u}`,m=qt(c.tone(u));r.style.setProperty(l,m)}}}}function ye(e,t,r=""){for(let[n,a]of Object.entries(t.toJSON())){let o=n.replace(/([a-z])([A-Z])/g,"$1-$2").toLowerCase(),s=qt(a);e.style.setProperty(`--md-sys-color-${o}${r}`,s)}}function gt(e){"@babel/helpers - typeof";return gt=typeof Symbol=="function"&&typeof Symbol.iterator=="symbol"?function(t){return typeof t}:function(t){return t&&typeof Symbol=="function"&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},gt(e)}function _e(e,t){if(gt(e)!="object"||!e)return e;var r;if(typeof Symbol<"u"&&(r=e[Symbol.toPrimitive])!==void 0){var n=r.call(e,t||"default");if(gt(n)!="object")return n;throw new TypeError("@@toPrimitive must return a primitive value.")}return(t==="string"?String:Number)(e)}function Ne(e){var t=_e(e,"string");return gt(t)=="symbol"?t:t+""}function W(e,t,r){return(t=Ne(t))in e?Object.defineProperty(e,t,{value:r,enumerable:!0,configurable:!0,writable:!0}):e[t]=r,e}var L=Math.round;function xe(e,t){let r=e.replace(/^[^(]*\((.*)/,"$1").replace(/\).*/,"").match(/\d*\.?\d+%?/g)||[],n=r.map(a=>parseFloat(a));for(let a=0;a<3;a+=1)n[a]=t(n[a]||0,r[a]||"",a);return r[3]?n[3]=r[3].includes("%")?n[3]/100:n[3]:n[3]=1,n}var Ue=(e,t,r)=>r===0?e:e/100;function Rt(e,t){let r=t||255;return e>r?r:e<0?0:e}var pt=class e{constructor(t){W(this,"isValid",!0),W(this,"r",0),W(this,"g",0),W(this,"b",0),W(this,"a",1),W(this,"_h",void 0),W(this,"_s",void 0),W(this,"_l",void 0),W(this,"_v",void 0),W(this,"_max",void 0),W(this,"_min",void 0),W(this,"_brightness",void 0);function r(n){return n[0]in t&&n[1]in t&&n[2]in t}if(t)if(typeof t=="string"){let a=function(o){return n.startsWith(o)},n=t.trim();/^#?[A-F\d]{3,8}$/i.test(n)?this.fromHexString(n):a("rgb")?this.fromRgbString(n):a("hsl")?this.fromHslString(n):(a("hsv")||a("hsb"))&&this.fromHsvString(n)}else if(t instanceof e)this.r=t.r,this.g=t.g,this.b=t.b,this.a=t.a,this._h=t._h,this._s=t._s,this._l=t._l,this._v=t._v;else if(r("rgb"))this.r=Rt(t.r),this.g=Rt(t.g),this.b=Rt(t.b),this.a=typeof t.a=="number"?Rt(t.a,1):1;else if(r("hsl"))this.fromHsl(t);else if(r("hsv"))this.fromHsv(t);else throw new Error("@ant-design/fast-color: unsupported input "+JSON.stringify(t))}setR(t){return this._sc("r",t)}setG(t){return this._sc("g",t)}setB(t){return this._sc("b",t)}setA(t){return this._sc("a",t,1)}setHue(t){let r=this.toHsv();return r.h=t,this._c(r)}getLuminance(){function t(o){let s=o/255;return s<=.03928?s/12.92:Math.pow((s+.055)/1.055,2.4)}let r=t(this.r),n=t(this.g),a=t(this.b);return .2126*r+.7152*n+.0722*a}getHue(){if(typeof this._h>"u"){let t=this.getMax()-this.getMin();t===0?this._h=0:this._h=L(60*(this.r===this.getMax()?(this.g-this.b)/t+(this.g<this.b?6:0):this.g===this.getMax()?(this.b-this.r)/t+2:(this.r-this.g)/t+4))}return this._h}getSaturation(){if(typeof this._s>"u"){let t=this.getMax()-this.getMin();t===0?this._s=0:this._s=t/this.getMax()}return this._s}getLightness(){return typeof this._l>"u"&&(this._l=(this.getMax()+this.getMin())/510),this._l}getValue(){return typeof this._v>"u"&&(this._v=this.getMax()/255),this._v}getBrightness(){return typeof this._brightness>"u"&&(this._brightness=(this.r*299+this.g*587+this.b*114)/1e3),this._brightness}darken(t=10){let r=this.getHue(),n=this.getSaturation(),a=this.getLightness()-t/100;return a<0&&(a=0),this._c({h:r,s:n,l:a,a:this.a})}lighten(t=10){let r=this.getHue(),n=this.getSaturation(),a=this.getLightness()+t/100;return a>1&&(a=1),this._c({h:r,s:n,l:a,a:this.a})}mix(t,r=50){let n=this._c(t),a=r/100,o=c=>(n[c]-this[c])*a+this[c],s={r:L(o("r")),g:L(o("g")),b:L(o("b")),a:L(o("a")*100)/100};return this._c(s)}tint(t=10){return this.mix({r:255,g:255,b:255,a:1},t)}shade(t=10){return this.mix({r:0,g:0,b:0,a:1},t)}onBackground(t){let r=this._c(t),n=this.a+r.a*(1-this.a),a=o=>L((this[o]*this.a+r[o]*r.a*(1-this.a))/n);return this._c({r:a("r"),g:a("g"),b:a("b"),a:n})}isDark(){return this.getBrightness()<128}isLight(){return this.getBrightness()>=128}equals(t){return this.r===t.r&&this.g===t.g&&this.b===t.b&&this.a===t.a}clone(){return this._c(this)}toHexString(){let t="#",r=(this.r||0).toString(16);t+=r.length===2?r:"0"+r;let n=(this.g||0).toString(16);t+=n.length===2?n:"0"+n;let a=(this.b||0).toString(16);if(t+=a.length===2?a:"0"+a,typeof this.a=="number"&&this.a>=0&&this.a<1){let o=L(this.a*255).toString(16);t+=o.length===2?o:"0"+o}return t}toHsl(){return{h:this.getHue(),s:this.getSaturation(),l:this.getLightness(),a:this.a}}toHslString(){let t=this.getHue(),r=L(this.getSaturation()*100),n=L(this.getLightness()*100);return this.a!==1?`hsla(${t},${r}%,${n}%,${this.a})`:`hsl(${t},${r}%,${n}%)`}toHsv(){return{h:this.getHue(),s:this.getSaturation(),v:this.getValue(),a:this.a}}toRgb(){return{r:this.r,g:this.g,b:this.b,a:this.a}}toRgbString(){return this.a!==1?`rgba(${this.r},${this.g},${this.b},${this.a})`:`rgb(${this.r},${this.g},${this.b})`}toString(){return this.toRgbString()}_sc(t,r,n){let a=this.clone();return a[t]=Rt(r,n),a}_c(t){return new this.constructor(t)}getMax(){return typeof this._max>"u"&&(this._max=Math.max(this.r,this.g,this.b)),this._max}getMin(){return typeof this._min>"u"&&(this._min=Math.min(this.r,this.g,this.b)),this._min}fromHexString(t){let r=t.replace("#","");function n(a,o){return parseInt(r[a]+r[o||a],16)}r.length<6?(this.r=n(0),this.g=n(1),this.b=n(2),this.a=r[3]?n(3)/255:1):(this.r=n(0,1),this.g=n(2,3),this.b=n(4,5),this.a=r[6]?n(6,7)/255:1)}fromHsl({h:t,s:r,l:n,a}){if(this._h=t%360,this._s=r,this._l=n,this.a=typeof a=="number"?a:1,r<=0){let d=L(n*255);this.r=d,this.g=d,this.b=d}let o=0,s=0,c=0,h=t/60,u=(1-Math.abs(2*n-1))*r,l=u*(1-Math.abs(h%2-1));h>=0&&h<1?(o=u,s=l):h>=1&&h<2?(o=l,s=u):h>=2&&h<3?(s=u,c=l):h>=3&&h<4?(s=l,c=u):h>=4&&h<5?(o=l,c=u):h>=5&&h<6&&(o=u,c=l);let m=n-u/2;this.r=L((o+m)*255),this.g=L((s+m)*255),this.b=L((c+m)*255)}fromHsv({h:t,s:r,v:n,a}){this._h=t%360,this._s=r,this._v=n,this.a=typeof a=="number"?a:1;let o=L(n*255);if(this.r=o,this.g=o,this.b=o,r<=0)return;let s=t/60,c=Math.floor(s),h=s-c,u=L(n*(1-r)*255),l=L(n*(1-r*h)*255),m=L(n*(1-r*(1-h))*255);switch(c){case 0:this.g=m,this.b=u;break;case 1:this.r=l,this.b=u;break;case 2:this.r=u,this.b=m;break;case 3:this.r=u,this.g=l;break;case 4:this.r=m,this.g=u;break;case 5:default:this.g=u,this.b=l;break}}fromHsvString(t){let r=xe(t,Ue);this.fromHsv({h:r[0],s:r[1],v:r[2],a:r[3]})}fromHslString(t){let r=xe(t,Ue);this.fromHsl({h:r[0],s:r[1],l:r[2],a:r[3]})}fromRgbString(t){let r=xe(t,(n,a)=>a.includes("%")?L(n/100*255):n);this.r=r[0],this.g=r[1],this.b=r[2],this.a=r[3]}};var $t=2,Ge=.16,Tr=.05,wr=.05,Sr=.15,Ye=5,We=4,vr=[{index:7,amount:15},{index:6,amount:25},{index:5,amount:30},{index:5,amount:45},{index:5,amount:65},{index:5,amount:85},{index:4,amount:90},{index:3,amount:95},{index:2,amount:97},{index:1,amount:98}];function qe(e,t,r){var n;return Math.round(e.h)>=60&&Math.round(e.h)<=240?n=r?Math.round(e.h)-$t*t:Math.round(e.h)+$t*t:n=r?Math.round(e.h)+$t*t:Math.round(e.h)-$t*t,n<0?n+=360:n>=360&&(n-=360),n}function $e(e,t,r){if(e.h===0&&e.s===0)return e.s;var n;return r?n=e.s-Ge*t:t===We?n=e.s+Ge:n=e.s+Tr*t,n>1&&(n=1),r&&t===Ye&&n>.1&&(n=.1),n<.06&&(n=.06),Math.round(n*100)/100}function je(e,t,r){var n;return r?n=e.v+wr*t:n=e.v-Sr*t,n=Math.max(0,Math.min(1,n)),Math.round(n*100)/100}function jt(e){for(var t=arguments.length>1&&arguments[1]!==void 0?arguments[1]:{},r=[],n=new pt(e),a=n.toHsv(),o=Ye;o>0;o-=1){var s=new pt({h:qe(a,o,!0),s:$e(a,o,!0),v:je(a,o,!0)});r.push(s)}r.push(n);for(var c=1;c<=We;c+=1){var h=new pt({h:qe(a,c),s:$e(a,c),v:je(a,c)});r.push(h)}return t.theme==="dark"?vr.map(function(u){var l=u.index,m=u.amount;return new pt(t.backgroundColor||"#141414").mix(r[l],m).toHexString()}):r.map(function(u){return u.toHexString()})}var Pe=["#fff1f0","#ffccc7","#ffa39e","#ff7875","#ff4d4f","#f5222d","#cf1322","#a8071a","#820014","#5c0011"];Pe.primary=Pe[5];var Ce=["#fff2e8","#ffd8bf","#ffbb96","#ff9c6e","#ff7a45","#fa541c","#d4380d","#ad2102","#871400","#610b00"];Ce.primary=Ce[5];var Ae=["#fff7e6","#ffe7ba","#ffd591","#ffc069","#ffa940","#fa8c16","#d46b08","#ad4e00","#873800","#612500"];Ae.primary=Ae[5];var ke=["#fffbe6","#fff1b8","#ffe58f","#ffd666","#ffc53d","#faad14","#d48806","#ad6800","#874d00","#613400"];ke.primary=ke[5];var Me=["#feffe6","#ffffb8","#fffb8f","#fff566","#ffec3d","#fadb14","#d4b106","#ad8b00","#876800","#614700"];Me.primary=Me[5];var De=["#fcffe6","#f4ffb8","#eaff8f","#d3f261","#bae637","#a0d911","#7cb305","#5b8c00","#3f6600","#254000"];De.primary=De[5];var Ie=["#f6ffed","#d9f7be","#b7eb8f","#95de64","#73d13d","#52c41a","#389e0d","#237804","#135200","#092b00"];Ie.primary=Ie[5];var Te=["#e6fffb","#b5f5ec","#87e8de","#5cdbd3","#36cfc9","#13c2c2","#08979c","#006d75","#00474f","#002329"];Te.primary=Te[5];var we=["#e6f4ff","#bae0ff","#91caff","#69b1ff","#4096ff","#1677ff","#0958d9","#003eb3","#002c8c","#001d66"];we.primary=we[5];var Se=["#f0f5ff","#d6e4ff","#adc6ff","#85a5ff","#597ef7","#2f54eb","#1d39c4","#10239e","#061178","#030852"];Se.primary=Se[5];var ve=["#f9f0ff","#efdbff","#d3adf7","#b37feb","#9254de","#722ed1","#531dab","#391085","#22075e","#120338"];ve.primary=ve[5];var Fe=["#fff0f6","#ffd6e7","#ffadd2","#ff85c0","#f759ab","#eb2f96","#c41d7f","#9e1068","#780650","#520339"];Fe.primary=Fe[5];var Be=["#a6a6a6","#999999","#8c8c8c","#808080","#737373","#666666","#404040","#1a1a1a","#000000","#000000"];Be.primary=Be[5];var cr={red:Pe,volcano:Ce,orange:Ae,gold:ke,yellow:Me,lime:De,green:Ie,cyan:Te,blue:we,geekblue:Se,purple:ve,magenta:Fe,grey:Be},Ke=["#2a1215","#431418","#58181c","#791a1f","#a61d24","#d32029","#e84749","#f37370","#f89f9a","#fac8c3"];Ke.primary=Ke[5];var Je=["#2b1611","#441d12","#592716","#7c3118","#aa3e19","#d84a1b","#e87040","#f3956a","#f8b692","#fad4bc"];Je.primary=Je[5];var Xe=["#2b1d11","#442a11","#593815","#7c4a15","#aa6215","#d87a16","#e89a3c","#f3b765","#f8cf8d","#fae3b7"];Xe.primary=Xe[5];var Ze=["#2b2111","#443111","#594214","#7c5914","#aa7714","#d89614","#e8b339","#f3cc62","#f8df8b","#faedb5"];Ze.primary=Ze[5];var Qe=["#2b2611","#443b11","#595014","#7c6e14","#aa9514","#d8bd14","#e8d639","#f3ea62","#f8f48b","#fafab5"];Qe.primary=Qe[5];var tr=["#1f2611","#2e3c10","#3e4f13","#536d13","#6f9412","#8bbb11","#a9d134","#c9e75d","#e4f88b","#f0fab5"];tr.primary=tr[5];var er=["#162312","#1d3712","#274916","#306317","#3c8618","#49aa19","#6abe39","#8fd460","#b2e58b","#d5f2bb"];er.primary=er[5];var rr=["#112123","#113536","#144848","#146262","#138585","#13a8a8","#33bcb7","#58d1c9","#84e2d8","#b2f1e8"];rr.primary=rr[5];var nr=["#111a2c","#112545","#15325b","#15417e","#1554ad","#1668dc","#3c89e8","#65a9f3","#8dc5f8","#b7dcfa"];nr.primary=nr[5];var ar=["#131629","#161d40","#1c2755","#203175","#263ea0","#2b4acb","#5273e0","#7f9ef3","#a8c1f8","#d2e0fa"];ar.primary=ar[5];var or=["#1a1325","#24163a","#301c4d","#3e2069","#51258f","#642ab5","#854eca","#ab7ae0","#cda8f0","#ebd7fa"];or.primary=or[5];var sr=["#291321","#40162f","#551c3b","#75204f","#a02669","#cb2b83","#e0529c","#f37fb7","#f8a8cc","#fad2e3"];sr.primary=sr[5];var ir=["#151515","#1f1f1f","#2d2d2d","#393939","#494949","#5a5a5a","#6a6a6a","#7b7b7b","#888888","#969696"];ir.primary=ir[5];globalThis.PaletteLibs={M:be,ant:{generate:jt,presetPalettes:cr}};})();
+/*! Bundled license information:
+
+@material/material-color-utilities/utils/math_utils.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/utils/color_utils.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/hct/viewing_conditions.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/hct/cam16.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/hct/hct_solver.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/hct/hct.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/blend/blend.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/contrast/contrast.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dislike/dislike_analyzer.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/dynamic_color.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/palettes/tonal_palette.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/contrast_curve.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/tone_delta_pair.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/variant.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/material_dynamic_colors.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/dynamiccolor/dynamic_scheme.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/palettes/core_palette.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/quantize/lab_point_provider.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/quantize/quantizer_wsmeans.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/quantize/quantizer_map.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/quantize/quantizer_wu.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/quantize/quantizer_celebi.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_android.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/temperature/temperature_cache.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_content.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_expressive.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_fidelity.js:
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_fruit_salad.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_monochrome.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_neutral.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_rainbow.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_tonal_spot.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/scheme/scheme_vibrant.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/score/score.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/utils/string_utils.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/utils/image_utils.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/utils/theme_utils.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@material/material-color-utilities/index.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *      http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+*/
+</script>
+<script>
+const PRESETS = [{"id":"hub-yellow","name":"Hub Yellow","family":"Hub & product","note":"After Hugging Face: a warm yellow on white, and its deep navy dark page.","light":{"primary":"#f2b300","background":"#ffffff","card":"#f8f9fb"},"dark":{"primary":"#ffd21e","background":"#0b0f19","card":"#101623"},"prov":"partial"},{"id":"github-primer","name":"GitHub Primer","family":"Hub & product","note":"GitHub's own light and dark: link blue on white, then #0d1117.","light":{"primary":"#0969da","background":"#ffffff","card":"#f6f8fa"},"dark":{"primary":"#58a6ff","background":"#0d1117","card":"#161b22"},"prov":"partial"},{"id":"gitlab-orange","name":"GitLab Orange","family":"Hub & product","note":"A forge-style orange with neutral grey surfaces.","light":{"primary":"#e24329","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#fc6d26","background":"#1f1e24","card":"#2b2a33"},"prov":"memory"},{"id":"kaggle-sky","name":"Kaggle Sky","family":"Hub & product","note":"Data-platform cyan-blue on clean white.","light":{"primary":"#0f9bd7","background":"#ffffff","card":"#f5f8fa"},"dark":{"primary":"#20beff","background":"#0f1419","card":"#181e26"},"prov":"memory"},{"id":"docs-green","name":"Docs Green","family":"Hub & product","note":"The green of documentation sites: calm, long-form friendly.","light":{"primary":"#2e8555","background":"#ffffff","card":"#f5f6f7"},"dark":{"primary":"#25c2a0","background":"#1b1b1d","card":"#242526"},"prov":"memory"},{"id":"material-indigo","name":"Material Indigo","family":"Hub & product","note":"Material's indigo with a slate dark page.","light":{"primary":"#3f51b5","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#9fa8da","background":"#1e2129","card":"#282c37"},"prov":"memory"},{"id":"cloud-blue","name":"Cloud Blue","family":"Cool & clear","note":"The safe, trustworthy blue on a cool slate dark.","light":{"primary":"#2563eb","background":"#f8fafc","card":"#ffffff"},"dark":{"primary":"#60a5fa","background":"#0f172a","card":"#1e293b"},"prov":"original"},{"id":"indigo","name":"Indigo","family":"Cool & clear","note":"Deeper and a little more distinctive than plain blue.","light":{"primary":"#4f46e5","background":"#f8f9fc","card":"#ffffff"},"dark":{"primary":"#818cf8","background":"#111827","card":"#1f2937"},"prov":"original"},{"id":"violet","name":"Violet","family":"Cool & clear","note":"A model-lab purple with a tinted dark page.","light":{"primary":"#7c3aed","background":"#faf8ff","card":"#ffffff"},"dark":{"primary":"#a78bfa","background":"#17121f","card":"#211a2e"},"prov":"original"},{"id":"sky","name":"Sky","family":"Cool & clear","note":"Light, open, friendly.","light":{"primary":"#0284c7","background":"#f4f9fc","card":"#ffffff"},"dark":{"primary":"#38bdf8","background":"#0b1520","card":"#112030"},"prov":"original"},{"id":"cyan-hub","name":"Cyan Hub","family":"Cool & clear","note":"Cyan on the navy-black dark page of a model hub.","light":{"primary":"#0891b2","background":"#f3f7f9","card":"#ffffff"},"dark":{"primary":"#22d3ee","background":"#0b0f19","card":"#101623"},"prov":"original"},{"id":"navy","name":"Navy","family":"Cool & clear","note":"Formal and institutional.","light":{"primary":"#1d4ed8","background":"#f1f5f9","card":"#ffffff"},"dark":{"primary":"#93c5fd","background":"#0b1220","card":"#121b2e"},"prov":"original"},{"id":"emerald","name":"Emerald","family":"Warm & natural","note":"Fresh green, nature and growth.","light":{"primary":"#059669","background":"#f3f8f5","card":"#ffffff"},"dark":{"primary":"#34d399","background":"#0e1512","card":"#16211b"},"prov":"original"},{"id":"sage","name":"Sage","family":"Warm & natural","note":"A muted grey-green that stays out of the way.","light":{"primary":"#52796f","background":"#f4f7f4","card":"#ffffff"},"dark":{"primary":"#84a98c","background":"#1a221f","card":"#243029"},"prov":"original"},{"id":"mint","name":"Mint","family":"Warm & natural","note":"Cool green-teal with a clinical clean feel.","light":{"primary":"#0f766e","background":"#f0f9f7","card":"#ffffff"},"dark":{"primary":"#5eead4","background":"#0b1a18","card":"#112321"},"prov":"original"},{"id":"amber","name":"Amber","family":"Warm & natural","note":"Honey amber on warm white and a brown-black dark page.","light":{"primary":"#d97706","background":"#fffaf0","card":"#ffffff"},"dark":{"primary":"#fbbf24","background":"#17120a","card":"#221a0d"},"prov":"original"},{"id":"terracotta","name":"Terracotta","family":"Warm & natural","note":"Burnt orange with warm stone neutrals.","light":{"primary":"#c2410c","background":"#fbf7f3","card":"#ffffff"},"dark":{"primary":"#fb923c","background":"#1c1917","card":"#292524"},"prov":"original"},{"id":"coral","name":"Coral","family":"Warm & natural","note":"A lively red-orange; friendly, consumer-facing.","light":{"primary":"#e5533d","background":"#fff8f5","card":"#ffffff"},"dark":{"primary":"#ff7b63","background":"#1c1210","card":"#281a16"},"prov":"original"},{"id":"rose","name":"Rose","family":"Warm & natural","note":"Strong crimson-pink; makes buttons obvious.","light":{"primary":"#e11d48","background":"#fff7f8","card":"#ffffff"},"dark":{"primary":"#fb7185","background":"#1a0f12","card":"#261519"},"prov":"original"},{"id":"berry","name":"Berry","family":"Warm & natural","note":"Magenta-berry for a creative community.","light":{"primary":"#be185d","background":"#fdf4f9","card":"#ffffff"},"dark":{"primary":"#f472b6","background":"#1f1020","card":"#2b172c"},"prov":"original"},{"id":"copper","name":"Copper","family":"Warm & natural","note":"A brown-gold with paper-like warmth.","light":{"primary":"#a35a12","background":"#faf6f0","card":"#ffffff"},"dark":{"primary":"#e0a060","background":"#1d1814","card":"#28211b"},"prov":"original"},{"id":"olive-gold","name":"Olive Gold (current)","family":"Warm & natural","note":"The theme the site ships with today, for reference.","light":{"primary":"#94621f","background":"#f7f4eb","card":"#fffdf7"},"dark":{"primary":"#e6b85c","background":"#1c211d","card":"#282e27"},"prov":"original"},{"id":"catppuccin-mauve","name":"Catppuccin Mauve","family":"Editor classics","note":"Catppuccin Latte and Mocha, mauve accent.","light":{"primary":"#8839ef","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#cba6f7","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-blue","name":"Catppuccin Blue","family":"Editor classics","note":"Catppuccin Latte and Mocha, blue accent.","light":{"primary":"#1e66f5","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#89b4fa","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-green","name":"Catppuccin Green","family":"Editor classics","note":"Catppuccin Latte and Mocha, green accent.","light":{"primary":"#40a02b","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#a6e3a1","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"rosepine-iris","name":"Rosé Pine Iris","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, iris accent.","light":{"primary":"#907aa9","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#c4a7e7","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"rosepine-rose","name":"Rosé Pine Rose","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, rose accent.","light":{"primary":"#b4637a","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#ebbcba","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"nord","name":"Nord","family":"Editor classics","note":"Nord's frost blue on snow white and polar night.","light":{"primary":"#5e81ac","background":"#eceff4","card":"#ffffff"},"dark":{"primary":"#88c0d0","background":"#2e3440","card":"#3b4252"},"prov":"memory"},{"id":"gruvbox-orange","name":"Gruvbox Orange","family":"Editor classics","note":"Gruvbox's retro paper and dark, orange accent.","light":{"primary":"#af3a03","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#fe8019","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"gruvbox-green","name":"Gruvbox Green","family":"Editor classics","note":"Gruvbox's retro paper and dark, green accent.","light":{"primary":"#79740e","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#b8bb26","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"tokyo-night","name":"Tokyo Night","family":"Editor classics","note":"Tokyo Night Day and Night, blue accent.","light":{"primary":"#2e7de9","background":"#e1e2e7","card":"#f2f3f7"},"dark":{"primary":"#7aa2f7","background":"#1a1b26","card":"#24283b"},"prov":"memory"},{"id":"dracula","name":"Dracula","family":"Editor classics","note":"Dracula's purple with the Alucard light page.","light":{"primary":"#644ac9","background":"#fffbeb","card":"#ffffff"},"dark":{"primary":"#bd93f9","background":"#282a36","card":"#343746"},"prov":"memory"},{"id":"everforest","name":"Everforest","family":"Editor classics","note":"A soft green on cream, and a green-grey dark.","light":{"primary":"#8da101","background":"#fdf6e3","card":"#f4f0d9"},"dark":{"primary":"#a7c080","background":"#2d353b","card":"#343f44"},"prov":"memory"},{"id":"kanagawa","name":"Kanagawa","family":"Editor classics","note":"Kanagawa Lotus and Wave: Japanese-print muted blue.","light":{"primary":"#4d699b","background":"#f2ecbc","card":"#f9f5d7"},"dark":{"primary":"#7e9cd8","background":"#1f1f28","card":"#2a2a37"},"prov":"memory"},{"id":"ayu","name":"Ayu","family":"Editor classics","note":"Ayu Light and Mirage: a bright orange to gold.","light":{"primary":"#ff9940","background":"#fcfcfc","card":"#ffffff"},"dark":{"primary":"#ffcc66","background":"#1f2430","card":"#242b38"},"prov":"memory"},{"id":"darcula-orange","name":"Darcula Orange","family":"Editor classics","note":"JetBrains Darcula dark (#2b2b2b editor, #3c3f41 panels, keyword orange). The light side is my pairing, not an official Darcula light.","light":{"primary":"#a8570f","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#cc7832","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"darcula-blue","name":"Darcula Blue","family":"Editor classics","note":"JetBrains Darcula dark with its steel-blue number colour (#6897bb). The light side is my pairing.","light":{"primary":"#2f6ea8","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#6897bb","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"monokai-pink","name":"Monokai Pink","family":"Editor classics","note":"Monokai's #272822 with its pink; the light side is my pairing.","light":{"primary":"#d6155e","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#f92672","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"monokai-green","name":"Monokai Green","family":"Editor classics","note":"Monokai's #272822 with its green; the light side is my pairing.","light":{"primary":"#5f8f12","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#a6e22e","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"palenight","name":"Palenight","family":"Editor classics","note":"Material Palenight dark (#292d3e, purple #c792ea); the light side is a Material-style pairing.","light":{"primary":"#7e57c2","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#c792ea","background":"#292d3e","card":"#34374b"},"prov":"partial"},{"id":"night-owl","name":"Night Owl","family":"Editor classics","note":"Night Owl's deep navy and Light Owl; colours from memory, not checked against the source.","light":{"primary":"#4876d6","background":"#fbfbfb","card":"#ffffff"},"dark":{"primary":"#82aaff","background":"#011627","card":"#0b2942"},"prov":"memory"},{"id":"solarized","name":"Solarized","family":"Editor classics","note":"Ethan Schoonover's palette: base3 and base2 for light, base03 and base02 for dark, with the blue swatch as the accent.","light":{"primary":"#268bd2","background":"#eee8d5","card":"#fdf6e3"},"dark":{"primary":"#268bd2","background":"#002b36","card":"#073642"},"prov":"official","source":["Official palette","https://ethanschoonover.com/solarized/"],"market":"Solarized Theme for JetBrains: about 2.5M downloads"},{"id":"vitesse","name":"Vitesse","family":"Editor classics","note":"antfu's Vitesse: one green, deeper in light and lighter in dark. The source has no raised surface, so the page tone is my pairing.","light":{"primary":"#1c6b48","background":"#f5f5f3","card":"#ffffff"},"dark":{"primary":"#4d9375","background":"#0c0c0c","card":"#121212"},"prov":"official","source":["Official theme files","https://github.com/antfu/vscode-theme-vitesse"],"market":"119k installs on the VS Code Marketplace"},{"id":"min","name":"Min","family":"Editor classics","note":"Min Light and Min Dark: monochrome, no accent hue at all.","light":{"primary":"#757575","background":"#f6f6f6","card":"#ffffff"},"dark":{"primary":"#cccccc","background":"#1a1a1a","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/miguelsolorio/min-theme"],"market":"634k installs on the VS Code Marketplace"},{"id":"winter-is-coming","name":"Winter is Coming","family":"Editor classics","note":"A cold blue with plain greys. The dark source has one surface only, so its card is my pairing.","light":{"primary":"#236ebf","background":"#f3f3f3","card":"#ffffff"},"dark":{"primary":"#219fd5","background":"#282822","card":"#32322b"},"prov":"official","source":["Official theme files","https://github.com/johnpapa/vscode-winteriscoming"],"market":"3.76M installs on the VS Code Marketplace"},{"id":"noctis","name":"Noctis","family":"Editor classics","note":"Noctis Lux (warm cream) and Noctis (deep teal): one teal-cyan accent.","light":{"primary":"#0099ad","background":"#f9f1e1","card":"#fef8ec"},"dark":{"primary":"#40d4e7","background":"#041d20","card":"#052529"},"prov":"official","source":["Official theme files","https://github.com/liviuschera/noctis"],"market":"1.40M installs on the VS Code Marketplace"},{"id":"bluloco","name":"Bluloco","family":"Editor classics","note":"Bluloco Light and Dark: a sky blue and a brighter royal blue.","light":{"primary":"#0099e1","background":"#e8e8e8","card":"#f9f9f9"},"dark":{"primary":"#3691ff","background":"#22252a","card":"#282c34"},"prov":"official","source":["Official theme files","https://github.com/uloco/theme-bluloco-light"],"market":"about 530k installs on the VS Code Marketplace"},{"id":"horizon","name":"Horizon","family":"Editor classics","note":"Horizon Bright and Horizon: a single pink-red. The source has one surface per mode; the card is my pairing.","light":{"primary":"#e84a72","background":"#fdf0ed","card":"#ffffff"},"dark":{"primary":"#e95378","background":"#1c1e26","card":"#262833"},"prov":"official","source":["Official theme files","https://github.com/jolaleye/horizon-theme-vscode"],"market":"about 163k installs (a fork; the original was removed)"},{"id":"flexoki","name":"Flexoki","family":"Editor classics","note":"Steph Ango's Flexoki: warm paper and black, with the cyan accent of the VS Code port.","light":{"primary":"#24837b","background":"#f2f0e5","card":"#fffcf0"},"dark":{"primary":"#3aa99f","background":"#100f0f","card":"#1c1b1a"},"prov":"official","source":["Official palette and VS Code port","https://stephango.com/flexoki"]},{"id":"vscode-modern","name":"VS Code Modern","family":"Editor classics","note":"VS Code's current built-in Light Modern and Dark Modern with their single blue.","light":{"primary":"#005fb8","background":"#f8f8f8","card":"#ffffff"},"dark":{"primary":"#0078d4","background":"#181818","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes"]},{"id":"selenized","name":"Selenized","family":"Editor classics","note":"Jan Warchol's Selenized: a careful remake of Solarized with better contrast.","light":{"primary":"#0072d4","background":"#ece3cc","card":"#fbf3db"},"dark":{"primary":"#4695f7","background":"#103c48","card":"#184956"},"prov":"official","source":["Official palette","https://github.com/jan-warchol/selenized"]},{"id":"papercolor","name":"PaperColor","family":"Editor classics","note":"The PaperColor Vim theme: soft greys with a navy and a teal.","light":{"primary":"#005f87","background":"#e4e4e4","card":"#eeeeee"},"dark":{"primary":"#00afaf","background":"#1c1c1c","card":"#303030"},"prov":"official","source":["Official Vim theme","https://github.com/NLKNguyen/papercolor-theme"]},{"id":"one-zed","name":"One (Zed)","family":"Editor classics","note":"Zed's built-in One Light and One Dark, descended from Atom One.","light":{"primary":"#5c78e2","background":"#ebebec","card":"#fafafa"},"dark":{"primary":"#74ade8","background":"#282c33","card":"#2f343e"},"prov":"official","source":["Official theme file","https://github.com/zed-industries/zed/blob/main/assets/themes/one/one.json"],"market":"descended from Atom One; One Dark for JetBrains: about 11.8M downloads"},{"id":"adwaita","name":"Adwaita","family":"Editor classics","note":"GNOME's Adwaita: the same blue in both modes.","light":{"primary":"#3584e4","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#3584e4","background":"#1d1d1d","card":"#242424"},"prov":"official","source":["Official theme files","https://github.com/piousdeer/vscode-adwaita"],"market":"96k installs on the VS Code Marketplace"},{"id":"graphite","name":"Graphite","family":"Neutral","note":"Colourless grey; lets the content carry the colour.","light":{"primary":"#374151","background":"#f9fafb","card":"#ffffff"},"dark":{"primary":"#d1d5db","background":"#111111","card":"#1b1b1b"},"prov":"original"},{"id":"ink","name":"Ink","family":"Neutral","note":"Black and white, nothing else.","light":{"primary":"#111111","background":"#ffffff","card":"#fafafa"},"dark":{"primary":"#fafafa","background":"#09090b","card":"#18181b"},"prov":"original"},{"id":"paper","name":"Paper","family":"Neutral","note":"Sepia paper with a brown accent, for long reading.","light":{"primary":"#7a4a21","background":"#f4ecd8","card":"#fbf5e6"},"dark":{"primary":"#d9a066","background":"#1e1812","card":"#2a2118"},"prov":"original"},{"id":"high-contrast","name":"High Contrast","family":"Neutral","note":"Maximum contrast: pure white and pure black pages.","light":{"primary":"#0033cc","background":"#ffffff","card":"#ffffff"},"dark":{"primary":"#66b3ff","background":"#000000","card":"#0d0d0d"},"prov":"original"}];
+// ---------- colour maths (OKLab / OKLCH) ----------
+const rgb = (h) => h.match(/[a-f\d]{2}/gi).map((p) => parseInt(p, 16));
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+const toOklab = (hex) => { const [r, g, b] = rgb(hex).map((v) => lin(v / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s] };
+const toOklch = (hex) => { const [L, a, b] = toOklab(hex); let h = (Math.atan2(b, a) * 180) / Math.PI; if (h < 0) h += 360; return { L, C: Math.hypot(a, b), h } };
+const fromOklab = (L, a, b) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s] };
+const fromOklch = (L, C, h) => { const r = (h * Math.PI) / 180; return fromOklab(L, C * Math.cos(r), C * Math.sin(r)) };
+const inGamut = (v) => v.every((c) => c >= -0.0005 && c <= 1.0005);
+const rgb2hex = (v) => "#" + v.map((c) => Math.round(Math.min(1, Math.max(0, gam(Math.min(1, Math.max(0, c))))) * 255).toString(16).padStart(2, "0")).join("");
+const maxChroma = (L, h) => { let lo = 0, hi = 0.4; for (let i = 0; i < 28; i++) { const mid = (lo + hi) / 2; inGamut(fromOklch(L, mid, h)) ? (lo = mid) : (hi = mid) } return lo };
+const oklch2hex = (L, C, h) => rgb2hex(fromOklch(L, Math.min(C, maxChroma(L, h)), h));
+const dE = (a, b) => { const x = toOklab(a), y = toOklab(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) };
+// ---------- the site's own derivation (src/shared/site-theme.js: text, link, button text, border) ----------
+const mix = (c, t, w) => { const d = rgb(t); return "#" + rgb(c).map((ch, i) => Math.round(ch + (d[i] - ch) * w).toString(16).padStart(2, "0")).join("") };
+const lum = (h) => { const c = rgb(h).map((v) => lin(v / 255)); return c[0] * .2126 + c[1] * .7152 + c[2] * .0722 };
+const ratio = (a, b) => { const v = [lum(a), lum(b)].sort((x, y) => y - x); return (v[0] + .05) / (v[1] + .05) };
+const contrastText = (bg) => ratio(bg, "#ffffff") >= ratio(bg, "#000000") ? "#ffffff" : "#000000";
+const softText = (bg) => { const ink = "#2c332b", cream = "#eef0e7"; const p = ratio(bg, ink) >= ratio(bg, cream) ? ink : cream; return ratio(bg, p) >= 4.5 ? p : contrastText(bg) };
+const readableSoft = (color, bg) => { const t = softText(bg); for (let s = 0; s <= 20; s++) { const c = mix(color, t, s / 20); if (ratio(c, bg) >= 4.5) return c } return t };
+function palette({ primary, background, card }) { const cardText = softText(card); return { text: softText(background), cardText, btn: softText(primary), link: readableSoft(primary, card), border: mix(cardText, card, .82) } }
+// APCA (0.0.98G), shown as information only: WCAG 2 is the compliance test, APCA is a better guide in dark mode.
+const apcaY = (hex) => { const [r, g, b] = rgb(hex).map((v) => (v / 255) ** 2.4); const Y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b; return Y < 0.022 ? Y + (0.022 - Y) ** 1.414 : Y };
+function apca(txt, bg) { const t = apcaY(txt), b = apcaY(bg); if (Math.abs(b - t) < 0.0005) return 0; if (b > t) { const s = (b ** 0.56 - t ** 0.57) * 1.14; return s < 0.1 ? 0 : (s - 0.027) * 100 } const s = (b ** 0.65 - t ** 0.62) * 1.14; return s > -0.1 ? 0 : Math.abs((s + 0.027) * 100) }
+
+// ---------- three ways from ONE brand colour (the light primary) to the six colours ----------
+const STYLES = { tinted: { name: "Tinted", note: "Page and card take a faint tint of the brand hue.", f: (h) => [h, 1] }, cool: { name: "Cool slate", note: "A bluish grey, whatever the brand hue.", f: () => [265, 1] }, warm: { name: "Warm stone", note: "A yellowish grey, like paper.", f: () => [75, 1] }, neutral: { name: "Neutral", note: "Pure greys with no colour at all.", f: () => [0, 0] }, ide: { name: "IDE grey", note: "A faint blue-grey like Darcula and VS Code.", f: () => [250, 0.35] } };
+function rules(primary, { style = "tinted", depth = 0 } = {}) {
+  // Fitted to 13 themes whose files were read: the dark primary keeps the light one's hue and vividness and is only lifted when it is too dark for a dark page.
+  const { L, C, h } = toOklch(primary); const [hs, k] = STYLES[style].f(h);
+  const Ld = Math.max(L, 0.68), bgL = 0.23 - depth * 0.07, cardL = bgL + 0.05;
+  return { light: { primary, background: oklch2hex(0.96, 0.006 * k, hs), card: "#ffffff" }, dark: { primary: oklch2hex(Ld, C, h), background: oklch2hex(bgL, 0.01 * k, hs), card: oklch2hex(cardL, 0.012 * k, hs) } };
+}
+function material3(primary) {
+  const M = PaletteLibs.M, t = M.themeFromSourceColor(M.argbFromHex(primary)), P = t.palettes.primary, N = t.palettes.neutral, hx = (a) => M.hexFromArgb(a);
+  return { light: { primary: hx(P.tone(40)), background: hx(N.tone(98)), card: hx(N.tone(100)) }, dark: { primary: hx(P.tone(80)), background: hx(N.tone(6)), card: hx(N.tone(12)) } };
+}
+function antDesign(primary) {
+  const g = PaletteLibs.ant.generate;
+  return { light: { primary: g(primary)[5], background: "#f5f5f5", card: "#ffffff" }, dark: { primary: g(primary, { theme: "dark", backgroundColor: "#141414" })[5], background: "#141414", card: "#1f1f1f" } };
+}
+const METHODS = {
+  rules: { name: "Rules (OKLCH)", short: "Hand-written rules in OKLCH", fn: rules, hint: "Your colour stays the light primary. The dark primary keeps its hue and vividness and is only lifted when it is too dark for a dark page. Page and card come from the style you choose and the dark depth.", styles: true },
+  material3: { name: "Material 3", short: "Google's tonal palettes (HCT)", fn: material3, hint: "Google's algorithm re-reads your colour at fixed tones: primary tone 40 in light and 80 in dark, surfaces from a tinted neutral. It can shift your colour.", styles: false },
+  ant: { name: "Ant Design", short: "Ant Design's colour generator", fn: antDesign, hint: "The generator of the Ant Design system: your colour is the light primary, dark mode mixes its ramp into a fixed grey. Page and card are fixed greys.", styles: false },
+};
+const KEYS = [["light", "primary"], ["light", "background"], ["light", "card"], ["dark", "primary"], ["dark", "background"], ["dark", "card"]];
+const KEYNAME = { primary_light: ["light", "primary"], background_light: ["light", "background"], card_light: ["light", "card"], primary_dark: ["dark", "primary"], background_dark: ["dark", "background"], card_dark: ["dark", "card"] };
+const flat = (set) => Object.fromEntries(Object.entries(KEYNAME).map(([k, [m, s]]) => [k, set[m][s]]));
+const NAMED = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Pink", "#db2777"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
+
+// ---------- shared view helpers ----------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function tile(mode, t) {
+  const p = palette(t);
+  const style = `--t-bg:${t.background};--t-card:${t.card};--t-text:${p.text};--t-card-text:${p.cardText};--t-primary:${t.primary};--t-btn-text:${p.btn};--t-link:${p.link};--t-border:${p.border}`;
+  return `<div class="tile" style="${style}"><span class="mode">${mode === "light" ? "Light mode" : "Dark mode"}</span><div class="pc"><p class="eyebrow">YOUR NEXT PROJECT</p><h4>A home for your ideas</h4><p class="body">Share models and datasets with your community.</p><span class="lnk">Browse repositories →</span><span class="btn">Create repository</span></div></div>`;
+}
+const tiles = (set, mini) => `<div class="tiles${mini ? " " + (mini === true ? "mini" : mini) : ""}">${tile("light", set.light)}${tile("dark", set.dark)}</div>`;
+const hexRows = (t) => ["primary", "background", "card"].map((k) => `<span><i class="sw" style="background:${t[k]}"></i>${t[k]} <small>${k}</small></span>`).join("");
+const toast = (m) => { $("toast").textContent = m; clearTimeout(toast.t); toast.t = setTimeout(() => { $("toast").textContent = "" }, 2200) };
+async function copyText(str, label) {
+  const out = $("out");
+  try { await navigator.clipboard.writeText(str); out.hidden = true; toast(label + " copied") }
+  catch (e) { out.hidden = false; out.value = str; out.focus(); out.select(); toast("Select and copy the text below") }
+}
+const validHex = (v) => /^#[0-9a-f]{6}$/i.test(v);
+
+// ---------- Presets tab ----------
+let family = "All", picks = new Set();
+try { picks = new Set(JSON.parse(localStorage.getItem("theme-picks") || "[]").filter((id) => PRESETS.some((p) => p.id === id))) } catch (e) {}
+const savePicks = () => { try { localStorage.setItem("theme-picks", JSON.stringify([...picks])) } catch (e) {} };
+const FAMILIES = ["All", ...new Set(PRESETS.map((p) => p.family))];
+const PROV = { partial: "Partly official: the dark side is checked against published colours, the rest is my pairing", memory: "From memory, not checked against a source", original: "Original design" };
+function provHtml(p) {
+  if (p.prov === "official") return `<span class="prov">Official values · <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])}</a>${p.market ? " · " + esc(p.market) : ""}</span>`;
+  return `<span class="prov">${esc(PROV[p.prov])}</span>`;
+}
+function card(p) {
+  const weak = ["light", "dark"].filter((m) => ratio(p[m].primary, p[m].card) < 3);
+  const warn = weak.length ? `<span class="warn">Link text is darkened automatically in ${weak.join(" and ")} mode (the primary is pale on the card).</span>` : "<span></span>";
+  const on = picks.has(p.id);
+  return `<article class="card" data-id="${p.id}" data-picked="${on}"><div class="head"><div><p class="fam">${esc(p.family)}</p><h3>${esc(p.name)}</h3><p class="note">${esc(p.note)}</p>${provHtml(p)}</div><button class="pick" type="button" data-pick="${p.id}" aria-pressed="${on}">${on ? "✓ Picked" : "Pick"}</button></div>${tiles(p)}<div class="hex"><div>${hexRows(p.light)}</div><div>${hexRows(p.dark)}</div></div><div class="foot">${warn}<button class="ghost" type="button" data-copy="${p.id}">Copy 6 colours</button></div></article>`;
+}
+function renderPresets() {
+  const n = (f) => f === "All" ? PRESETS.length : f === "Official" ? PRESETS.filter((p) => p.prov === "official").length : PRESETS.filter((p) => p.family === f).length;
+  $("bar").innerHTML = [...FAMILIES, "Official"].map((f) => `<button class="chip" type="button" aria-pressed="${family === f}" data-f="${esc(f)}">${f === "Official" ? "Official values only" : esc(f)}<span class="n">${n(f)}</span></button>`).join("") + `<button class="chip" type="button" aria-pressed="${family === "Picked"}" data-f="Picked">Picked<span class="n">${picks.size}</span></button>`;
+  const list = family === "All" ? PRESETS : family === "Picked" ? PRESETS.filter((p) => picks.has(p.id)) : family === "Official" ? PRESETS.filter((p) => p.prov === "official") : PRESETS.filter((p) => p.family === family);
+  $("grid").innerHTML = list.map(card).join(""); $("empty").hidden = !(family === "Picked" && !list.length);
+  $("picked").innerHTML = PRESETS.filter((p) => picks.has(p.id)).map((p) => `<span class="tag">${esc(p.name)}<button type="button" data-unpick="${p.id}" aria-label="Remove ${esc(p.name)}">×</button></span>`).join("") || `<span class="none">Nothing picked yet</span>`;
+  $("tlabel").textContent = `Picked ${picks.size}`; $("copy").disabled = !picks.size; $("clear").hidden = !picks.size;
+}
+const presetText = (p) => `${p.name} [${p.id}]\n  light: primary ${p.light.primary}, background ${p.light.background}, card ${p.light.card}\n  dark:  primary ${p.dark.primary}, background ${p.dark.background}, card ${p.dark.card}`;
+
+// ---------- Lab tab ----------
+const lab = { brand: "#2563eb", L: 0, C: 0, h: 0, style: "tinted", depth: 0, method: "rules", edits: {} };
+const setBrand = (hex) => { const o = toOklch(hex); Object.assign(lab, { brand: hex.toLowerCase(), L: o.L, C: o.C, h: o.h, edits: {} }) };
+const gen = (method, brand, opts) => METHODS[method].fn(brand, opts || { style: lab.style, depth: lab.depth / 100 });
+function current() { const g = gen(lab.method, lab.brand); const r = { light: { ...g.light }, dark: { ...g.dark } }; for (const [k, v] of Object.entries(lab.edits)) { const [m, s] = KEYNAME[k]; r[m][s] = v } return r }
+
+function renderInputs() {
+  $("pickc").value = lab.brand; if (document.activeElement !== $("hexin")) $("hexin").value = lab.brand;
+  $("names").innerHTML = NAMED.map(([n, h]) => `<button type="button" class="nm" data-name="${h}" aria-pressed="${lab.brand === h}"><i style="background:${h}"></i>${n}</button>`).join("");
+  $("hue").value = Math.round(lab.h);
+  $("hueTrack").style.background = `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => oklch2hex(lab.L, lab.C, i * 30)).join(",")})`;
+  $("hueHint").textContent = `Hue ${Math.round(lab.h)}°. Lightness ${lab.L.toFixed(2)} and vividness ${Math.min(lab.C, maxChroma(lab.L, lab.h)).toFixed(2)} stay as you set them.`;
+  const rulesOn = METHODS[lab.method].styles;
+  $("styles").innerHTML = Object.entries(STYLES).map(([id, s]) => { const [hs, k] = s.f(lab.h); return `<button type="button" data-style="${id}" aria-pressed="${lab.style === id}" ${rulesOn ? "" : "disabled"}><span class="pair"><b style="background:${oklch2hex(0.975, 0.008 * k, hs)}"></b><b style="background:${oklch2hex(0.2, 0.018 * k, hs)}"></b><b style="background:${oklch2hex(0.25, 0.022 * k, hs)}"></b></span>${s.name}</button>` }).join("");
+  $("styleHint").textContent = rulesOn ? STYLES[lab.style].note : "This method brings its own greys; the style applies to Rules only.";
+  $("depth").disabled = !rulesOn;
+  $("method").innerHTML = Object.entries(METHODS).map(([id, m]) => `<button type="button" data-method="${id}" aria-pressed="${lab.method === id}">${m.name}</button>`).join("");
+  $("methodHint").textContent = METHODS[lab.method].hint;
+}
+function renderResult() {
+  const r = current(), g = gen(lab.method, lab.brand);
+  $("resTiles").outerHTML = `<div class="tiles" id="resTiles">${tile("light", r.light)}${tile("dark", r.dark)}</div>`;
+  const labels = { primary: "Primary", background: "Page background", card: "Card" };
+  $("six").innerHTML = KEYS.map(([m, s]) => { const k = `${s}_${m}`, edited = k in lab.edits; return `<div class="cell ${edited ? "edited" : ""}"><span>${m === "light" ? "Light" : "Dark"} · ${labels[s]}</span><div class="in"><i class="sw" style="background:${r[m][s]}"></i><input type="text" data-key="${k}" value="${r[m][s]}" maxlength="7" spellcheck="false" aria-label="${m} ${labels[s]}"></div></div>` }).join("");
+  $("resetEdits").hidden = !Object.keys(lab.edits).length;
+  const shifted = lab.method === "material3" && g.light.primary !== lab.brand.toLowerCase();
+  const cell = (v, min) => `<td class="num ${v >= min ? "good" : "poor"}">${v.toFixed(2)} ${v >= min ? "✓" : "✗"}</td>`;
+  const rowsFor = (m) => { const t = r[m], p = palette(t); return { text: ratio(p.text, t.background), card: ratio(p.cardText, t.card), btn: ratio(p.btn, t.primary), link: ratio(p.link, t.card), raw: ratio(t.primary, t.card), sep: ratio(t.card, t.background), apca: apca(p.text, t.background) } };
+  const L = rowsFor("light"), D = rowsFor("dark");
+  $("report").innerHTML = `${shifted ? `<p class="warn" style="margin:0 0 8px">Material 3 moved your light primary from ${lab.brand} to ${g.light.primary}.</p>` : ""}<table class="rep"><thead><tr><th>Check</th><th>Light</th><th>Dark</th><th class="d">Needs</th></tr></thead><tbody>
+  <tr><td>Text on the page</td>${cell(L.text, 4.5)}${cell(D.text, 4.5)}<td class="d">4.5</td></tr>
+  <tr><td>Text on the card</td>${cell(L.card, 4.5)}${cell(D.card, 4.5)}<td class="d">4.5</td></tr>
+  <tr><td>Button text on the primary</td>${cell(L.btn, 4.5)}${cell(D.btn, 4.5)}<td class="d">4.5</td></tr>
+  <tr><td>Link text on the card (after the site adjusts it)</td>${cell(L.link, 4.5)}${cell(D.link, 4.5)}<td class="d">4.5</td></tr>
+  <tr><td>Primary as it is, on the card</td><td class="num">${L.raw.toFixed(2)}</td><td class="num">${D.raw.toFixed(2)}</td><td class="d">info</td></tr>
+  <tr><td>Card against page</td><td class="num">${L.sep.toFixed(2)}</td><td class="num">${D.sep.toFixed(2)}</td><td class="d">info</td></tr>
+  <tr><td>Page text, APCA Lc</td><td class="num">${L.apca.toFixed(0)}</td><td class="num">${D.apca.toFixed(0)}</td><td class="d">info</td></tr></tbody></table><p class="hint">The site derives text, link and button colours from your three colours and keeps them at 4.5:1 or better, so the first four rows pass for any input. The "as it is" row tells you how far the site had to move a pale primary to make it readable as a link.</p>`;
+}
+function renderCompare() {
+  $("cmp").innerHTML = Object.entries(METHODS).map(([id, m]) => { const g = gen(id, lab.brand), moved = id === "material3" && g.light.primary !== lab.brand.toLowerCase();
+    return `<div class="col"><h4>${m.name}</h4><p>${m.short}</p>${tiles(g, true)}<div class="hex"><div>${hexRows(g.light)}</div><div>${hexRows(g.dark)}</div></div>${moved ? `<p class="warn">Moves your light primary to ${g.light.primary}.</p>` : ""}<div><button class="ghost" type="button" data-method="${id}">${lab.method === id ? "Selected" : "Use this method"}</button></div></div>` }).join("");
+}
+function renderSweep() {
+  const hues = Array.from({ length: 12 }, (_, i) => i * 30);
+  $("sweep").innerHTML = hues.map((h) => { const brand = oklch2hex(lab.L, lab.C, h), g = gen(lab.method, brand), near = Math.min(Math.abs(h - lab.h), 360 - Math.abs(h - lab.h)) < 15;
+    return `<button type="button" data-brand="${brand}" aria-pressed="${near}">${tiles(g, "micro")}<span class="lab2">hue ${h}° · ${brand}</span></button>` }).join("");
+}
+let realId = null;
+function renderCheck() {
+  const real = PRESETS.filter((p) => p.prov === "official"); if (!realId) realId = real.find((p) => p.id === "solarized").id;
+  $("realsel").innerHTML = real.map((p) => `<option value="${p.id}" ${p.id === realId ? "selected" : ""}>${esc(p.name)}</option>`).join("");
+  const p = PRESETS.find((x) => x.id === realId);
+  const slots = [["light", "background"], ["light", "card"], ["dark", "primary"], ["dark", "background"], ["dark", "card"]];
+  const col = (id) => { const g = gen(id, p.light.primary); const rows = slots.map(([m, s]) => { const d = dE(g[m][s], p[m][s]); return `<div class="slotrow"><span>${m} ${s}</span><span class="sw2"><i style="background:${p[m][s]}"></i>${p[m][s]}</span><span class="sw2"><i style="background:${g[m][s]}"></i>${g[m][s]}</span><span class="${d < 0.03 ? "good" : d > 0.06 ? "poor" : ""}" style="font-family:var(--mono)">${d.toFixed(3)}</span></div>` }).join("");
+    const avg = slots.reduce((a, [m, s]) => a + dE(g[m][s], p[m][s]), 0) / slots.length;
+    return `<div class="panel"><div class="row" style="justify-content:space-between"><b>${METHODS[id].name}</b><span class="hint" style="margin:0">average distance ${avg.toFixed(3)}</span></div><div class="slotrow" style="color:var(--muted);font-size:11px"><span>Colour</span><span>Real theme</span><span>Generated</span><span>Distance</span></div>${rows}</div>` };
+  $("check").innerHTML = col(lab.method) + col(lab.method === "rules" ? "material3" : "rules");
+}
+const ABOUT = [
+  ["Rules (OKLCH): what is built here", `Fitted to 13 real themes whose files I read (the ones marked Official on the Presets tab). Findings that set the rules: in those themes the dark accent keeps the light accent's hue (median shift 3°, though 4 of 12 move it by more than 15°), and is lighter by only about 0.12 in OKLCH lightness at the median, with four of them using the same colour in both modes, so the rule lifts the dark primary only up to lightness 0.68 and keeps its vividness. The page is near white (lightness 0.96) with a trace of tint; the dark page and card sit near lightness 0.23 and 0.28 with chroma around 0.01, because real dark themes are close to neutral grey (6 of the 13 are exactly neutral, 9 have chroma below 0.015). OKLCH is used because its lightness matches what the eye sees across hues. Colours that do not fit the screen are clamped by chroma, not by cutting RGB channels. Small enough to read in one sitting, no dependency. Its limit: it cannot know that a designer moved the hue between modes (Bluloco goes from sky blue to royal blue, PaperColor from navy to teal).`],
+  ["Material 3 (Google): tonal palettes", `The source colour is converted to HCT (hue, chroma, tone). The algorithm builds tonal palettes at fixed chroma and reads them at fixed tones per role: primary at tone 40 in light and 80 in dark, surfaces from a faintly tinted neutral at tones 98 and 6. Open source (material-color-utilities, Apache-2.0, about 20 KB gzipped), inlined in this page. Its weak spot here: it recolours your brand colour. A yellow becomes olive-brown in light mode. <a href="https://github.com/material-foundation/material-color-utilities" target="_blank" rel="noopener noreferrer">Source</a>`],
+  ["Ant Design: generate()", `Builds a ten-step ramp from your colour in HSV (hue shifts a little cooler for lighter steps and warmer for darker), and for dark mode mixes ramp steps into a background grey. The page and card greys are fixed tokens, not derived. MIT, about 5 KB, inlined here. <a href="https://github.com/ant-design/ant-design-colors" target="_blank" rel="noopener noreferrer">Source</a>`],
+  ["Other approaches, not built here", `Radix Colors' custom palette picks the closest hand-made 12-step scale and shifts it towards your accent, with a separate gray and background. Adobe Leonardo solves each swatch to a target contrast ratio against a background. Mantine and tints.dev make a ten or eleven-step ramp from one colour; Mantine warns it works best with darker colours. Docusaurus' generator makes seven shades and rates each AA or AAA. Material for MkDocs takes a primary and an accent from a fixed list and derives its dark scheme from a hue number. Catppuccin and Base16 skip derivation: a fixed set of neutrals and many accents. Stylix derives a Base16 scheme from a wallpaper. <a href="https://www.radix-ui.com/colors/custom" target="_blank" rel="noopener noreferrer">Radix</a> · <a href="https://leonardocolor.io/" target="_blank" rel="noopener noreferrer">Leonardo</a> · <a href="https://mantine.dev/theming/colors/" target="_blank" rel="noopener noreferrer">Mantine</a>`],
+  ["What the inputs of other tools look like", `Radix asks for three things (accent, gray, background). Docusaurus, Mantine and Material take one colour (Material adds a contrast level). Material for MkDocs asks for two picks from a fixed list. shadcn asks for a base colour and a radius, with a live preview. None of the ones I read publish research on how many controls is best; the common pattern is presets first, one colour next, and the fine controls tucked away.`],
+];
+function renderAbout() { $("about").innerHTML = ABOUT.map(([t, b]) => `<details><summary>${t}</summary><p>${b}</p></details>`).join("") }
+function renderLab() { renderInputs(); renderResult(); renderCompare(); renderSweep(); renderCheck() }
+
+// ---------- events ----------
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
+  if (t.classList.contains("tab")) { const lb = t.id === "t-lab"; $("t-presets").setAttribute("aria-selected", !lb); $("t-lab").setAttribute("aria-selected", lb); $("tab-presets").hidden = lb; $("tab-lab").hidden = !lb; $("tray").hidden = lb; if (lb) renderLab(); return }
+  if (t.dataset.f) { family = t.dataset.f; renderPresets() }
+  else if (t.dataset.pick) { picks.has(t.dataset.pick) ? picks.delete(t.dataset.pick) : picks.add(t.dataset.pick); savePicks(); renderPresets() }
+  else if (t.dataset.unpick) { picks.delete(t.dataset.unpick); savePicks(); renderPresets() }
+  else if (t.dataset.copy) { const p = PRESETS.find((x) => x.id === t.dataset.copy); copyText(presetText(p), p.name) }
+  else if (t.id === "copy") copyText(`Picked presets (${picks.size}):\n` + PRESETS.filter((p) => picks.has(p.id)).map(presetText).join("\n"), "Picks")
+  else if (t.id === "clear") { picks.clear(); savePicks(); renderPresets() }
+  else if (t.dataset.name) { setBrand(t.dataset.name); renderLab() }
+  else if (t.dataset.style) { lab.style = t.dataset.style; lab.edits = {}; renderLab() }
+  else if (t.dataset.method) { lab.method = t.dataset.method; lab.edits = {}; renderLab() }
+  else if (t.dataset.brand) { setBrand(t.dataset.brand); renderLab() }
+  else if (t.id === "resetEdits") { lab.edits = {}; renderLab() }
+  else if (t.id === "copyJson") copyText(JSON.stringify(flat(current()), null, 2), "JSON")
+  else if (t.id === "copyList") { const r = current(); copyText(Object.entries(flat(r)).map(([k, v]) => `${k}: ${v}`).join("\n"), "List") }
+});
+$("pickc").addEventListener("input", (e) => { setBrand(e.target.value); renderLab() });
+$("hexin").addEventListener("input", (e) => { const v = e.target.value.trim(); e.target.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { setBrand(v); renderLab() } });
+$("hue").addEventListener("input", (e) => { const h = +e.target.value; lab.h = h; lab.brand = oklch2hex(lab.L, lab.C, h); lab.edits = {}; renderLab() });
+$("depth").addEventListener("input", (e) => { lab.depth = +e.target.value; lab.edits = {}; renderResult(); renderCompare(); renderSweep(); renderCheck() });
+$("frompreset").addEventListener("change", (e) => { if (e.target.value) { setBrand(e.target.value); renderLab() } });
+$("realsel").addEventListener("change", (e) => { realId = e.target.value; renderCheck() });
+$("six").addEventListener("input", (e) => { const i = e.target; if (!i.dataset.key) return; const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.edits[i.dataset.key] = v.toLowerCase(); const r = current(), [m, s] = KEYNAME[i.dataset.key]; i.closest(".cell").classList.add("edited"); i.previousElementSibling.style.background = r[m][s]; $("resTiles").outerHTML = `<div class="tiles" id="resTiles">${tile("light", r.light)}${tile("dark", r.dark)}</div>`; $("resetEdits").hidden = false } });
+$("count").textContent = PRESETS.length;
+$("frompreset").innerHTML = `<option value="">Choose a preset…</option>` + PRESETS.map((p) => `<option value="${p.light.primary}">${esc(p.name)} · ${p.light.primary}</option>`).join("");
+setBrand(lab.brand); renderAbout(); renderPresets();
+
+</script>

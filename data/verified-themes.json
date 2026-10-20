@@ -1,0 +1,262 @@
+[
+  {
+    "id": "solarized",
+    "name": "Solarized",
+    "source": [
+      "Official palette",
+      "https://ethanschoonover.com/solarized/"
+    ],
+    "market": "Solarized Theme for JetBrains: about 2.5M downloads",
+    "light": {
+      "primary": "#268bd2",
+      "background": "#eee8d5",
+      "card": "#fdf6e3"
+    },
+    "dark": {
+      "primary": "#268bd2",
+      "background": "#002b36",
+      "card": "#073642"
+    },
+    "note": "Ethan Schoonover's palette: base3 and base2 for light, base03 and base02 for dark, with the blue swatch as the accent."
+  },
+  {
+    "id": "vitesse",
+    "name": "Vitesse",
+    "source": [
+      "Official theme files",
+      "https://github.com/antfu/vscode-theme-vitesse"
+    ],
+    "market": "119k installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#1c6b48",
+      "background": "#f5f5f3",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#4d9375",
+      "background": "#0c0c0c",
+      "card": "#121212"
+    },
+    "note": "antfu's Vitesse: one green, deeper in light and lighter in dark. The source has no raised surface, so the page tone is my pairing."
+  },
+  {
+    "id": "min",
+    "name": "Min",
+    "source": [
+      "Official theme files",
+      "https://github.com/miguelsolorio/min-theme"
+    ],
+    "market": "634k installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#757575",
+      "background": "#f6f6f6",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#cccccc",
+      "background": "#1a1a1a",
+      "card": "#1f1f1f"
+    },
+    "note": "Min Light and Min Dark: monochrome, no accent hue at all."
+  },
+  {
+    "id": "winter-is-coming",
+    "name": "Winter is Coming",
+    "source": [
+      "Official theme files",
+      "https://github.com/johnpapa/vscode-winteriscoming"
+    ],
+    "market": "3.76M installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#236ebf",
+      "background": "#f3f3f3",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#219fd5",
+      "background": "#282822",
+      "card": "#32322b"
+    },
+    "note": "A cold blue with plain greys. The dark source has one surface only, so its card is my pairing."
+  },
+  {
+    "id": "noctis",
+    "name": "Noctis",
+    "source": [
+      "Official theme files",
+      "https://github.com/liviuschera/noctis"
+    ],
+    "market": "1.40M installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#0099ad",
+      "background": "#f9f1e1",
+      "card": "#fef8ec"
+    },
+    "dark": {
+      "primary": "#40d4e7",
+      "background": "#041d20",
+      "card": "#052529"
+    },
+    "note": "Noctis Lux (warm cream) and Noctis (deep teal): one teal-cyan accent."
+  },
+  {
+    "id": "bluloco",
+    "name": "Bluloco",
+    "source": [
+      "Official theme files",
+      "https://github.com/uloco/theme-bluloco-light"
+    ],
+    "market": "about 530k installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#0099e1",
+      "background": "#e8e8e8",
+      "card": "#f9f9f9"
+    },
+    "dark": {
+      "primary": "#3691ff",
+      "background": "#22252a",
+      "card": "#282c34"
+    },
+    "note": "Bluloco Light and Dark: a sky blue and a brighter royal blue."
+  },
+  {
+    "id": "horizon",
+    "name": "Horizon",
+    "source": [
+      "Official theme files",
+      "https://github.com/jolaleye/horizon-theme-vscode"
+    ],
+    "market": "about 163k installs (a fork; the original was removed)",
+    "light": {
+      "primary": "#e84a72",
+      "background": "#fdf0ed",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#e95378",
+      "background": "#1c1e26",
+      "card": "#262833"
+    },
+    "note": "Horizon Bright and Horizon: a single pink-red. The source has one surface per mode; the card is my pairing."
+  },
+  {
+    "id": "flexoki",
+    "name": "Flexoki",
+    "source": [
+      "Official palette and VS Code port",
+      "https://stephango.com/flexoki"
+    ],
+    "market": null,
+    "light": {
+      "primary": "#24837b",
+      "background": "#f2f0e5",
+      "card": "#fffcf0"
+    },
+    "dark": {
+      "primary": "#3aa99f",
+      "background": "#100f0f",
+      "card": "#1c1b1a"
+    },
+    "note": "Steph Ango's Flexoki: warm paper and black, with the cyan accent of the VS Code port."
+  },
+  {
+    "id": "vscode-modern",
+    "name": "VS Code Modern",
+    "source": [
+      "Official theme files",
+      "https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes"
+    ],
+    "market": null,
+    "light": {
+      "primary": "#005fb8",
+      "background": "#f8f8f8",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#0078d4",
+      "background": "#181818",
+      "card": "#1f1f1f"
+    },
+    "note": "VS Code's current built-in Light Modern and Dark Modern with their single blue."
+  },
+  {
+    "id": "selenized",
+    "name": "Selenized",
+    "source": [
+      "Official palette",
+      "https://github.com/jan-warchol/selenized"
+    ],
+    "market": null,
+    "light": {
+      "primary": "#0072d4",
+      "background": "#ece3cc",
+      "card": "#fbf3db"
+    },
+    "dark": {
+      "primary": "#4695f7",
+      "background": "#103c48",
+      "card": "#184956"
+    },
+    "note": "Jan Warchol's Selenized: a careful remake of Solarized with better contrast."
+  },
+  {
+    "id": "papercolor",
+    "name": "PaperColor",
+    "source": [
+      "Official Vim theme",
+      "https://github.com/NLKNguyen/papercolor-theme"
+    ],
+    "market": null,
+    "light": {
+      "primary": "#005f87",
+      "background": "#e4e4e4",
+      "card": "#eeeeee"
+    },
+    "dark": {
+      "primary": "#00afaf",
+      "background": "#1c1c1c",
+      "card": "#303030"
+    },
+    "note": "The PaperColor Vim theme: soft greys with a navy and a teal."
+  },
+  {
+    "id": "one-zed",
+    "name": "One (Zed)",
+    "source": [
+      "Official theme file",
+      "https://github.com/zed-industries/zed/blob/main/assets/themes/one/one.json"
+    ],
+    "market": "descended from Atom One; One Dark for JetBrains: about 11.8M downloads",
+    "light": {
+      "primary": "#5c78e2",
+      "background": "#ebebec",
+      "card": "#fafafa"
+    },
+    "dark": {
+      "primary": "#74ade8",
+      "background": "#282c33",
+      "card": "#2f343e"
+    },
+    "note": "Zed's built-in One Light and One Dark, descended from Atom One."
+  },
+  {
+    "id": "adwaita",
+    "name": "Adwaita",
+    "source": [
+      "Official theme files",
+      "https://github.com/piousdeer/vscode-adwaita"
+    ],
+    "market": "96k installs on the VS Code Marketplace",
+    "light": {
+      "primary": "#3584e4",
+      "background": "#fafafa",
+      "card": "#ffffff"
+    },
+    "dark": {
+      "primary": "#3584e4",
+      "background": "#1d1d1d",
+      "card": "#242424"
+    },
+    "note": "GNOME's Adwaita: the same blue in both modes."
+  }
+]

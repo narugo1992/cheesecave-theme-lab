@@ -1,0 +1,319 @@
+<title>Site Colour Picker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: two tabs. Presets is a swatch book of cards, each with the light and the dark tile of the admin Theme page. Lab is a control column and a result column: inputs on the left, the derived six colours and tiles on the right, then a comparison of methods, a hue sweep and a check against real themes. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --ink: #16181d; --muted: #5a616d; --line: #dde0e6; --chip: #e9ebef; --pick: #16181d; --pick-ink: #ffffff; --warn: #8a5a00; --ok: #1d6b3a; --bad: #a3262a;
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; margin: 0; padding-block: 28px 140px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.wrap { max-width: 1240px; margin: 0 auto }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; text-wrap: balance }
+h2.sec { font-size: 17px; font-weight: 600; margin: 34px 0 4px }
+.lede { color: var(--muted); max-width: 74ch; margin: 0 0 18px }
+.small { color: var(--muted); font-size: 13px; margin: 0 0 12px; max-width: 80ch }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px }
+.tab { font: inherit; font-weight: 500; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 14px; cursor: pointer; margin-bottom: -1px }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink) }
+.tab:focus-visible, .chip:focus-visible, .pick:focus-visible, .ghost:focus-visible, .seg button:focus-visible, .nm:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px }
+.chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 6px 13px; cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink) }
+.chip .n { font-family: var(--mono); font-size: 11px; opacity: .7; margin-left: 6px }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 470px), 1fr)); gap: 18px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.card[data-picked="true"] { border-color: var(--pick); box-shadow: 0 0 0 1px var(--pick) }
+.head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between }
+.head h3 { font-size: 16px; font-weight: 600; margin: 0 }
+.fam { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px }
+.note { color: var(--muted); font-size: 13px; margin: 2px 0 0; max-width: 48ch }
+.prov { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--muted); margin-top: 6px }
+.prov a { color: inherit }
+.pick, .ghost, .nm, .seg button { font: inherit; cursor: pointer }
+.pick { flex: none; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 6px 12px }
+.pick[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink); border-color: var(--pick) }
+.ghost { font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 9px }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.tile { padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--t-bg); color: var(--t-text); min-width: 0 }
+.tile .mode { display: block; font-size: 11px; font-weight: 600; margin-bottom: 9px }
+.tile .pc { padding: 14px; background: var(--t-card); color: var(--t-card-text); border: 1px solid var(--t-border); border-radius: 9px }
+.tile .eyebrow { margin: 0; color: var(--t-link); font-size: 9px; font-weight: 700; letter-spacing: .12em }
+.tile h4 { font-size: 16px; line-height: 1.25; margin: 8px 0 6px; font-weight: 600 }
+.tile p.body { margin: 0; opacity: .75; font-size: 12px; line-height: 1.55 }
+.tile .lnk { display: block; color: var(--t-link); font-size: 12px; margin: 11px 0 }
+.tile .btn { display: inline-block; color: var(--t-btn-text); background: var(--t-primary); padding: 7px 11px; border-radius: 7px; font-size: 12px }
+.tiles.mini { gap: 6px } .mini .tile { padding: 7px } .mini .tile .mode { font-size: 9px; margin-bottom: 5px } .mini .tile .pc { padding: 8px } .mini .tile h4 { font-size: 11px; margin: 4px 0 } .mini .tile .eyebrow, .mini .tile p.body, .mini .tile .lnk { display: none } .mini .tile .btn { font-size: 10px; padding: 4px 7px }
+.tiles.micro { gap: 4px } .micro .tile { padding: 5px } .micro .tile .mode, .micro .tile h4, .micro .tile .eyebrow, .micro .tile p.body, .micro .tile .lnk { display: none } .micro .tile .pc { padding: 5px } .micro .tile .btn { display: block; text-align: center; font-size: 10px; padding: 8px 2px }
+.hex { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--muted) }
+.hex div { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.hex span { display: flex; align-items: center; gap: 6px }
+.sw { width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); flex: none }
+.foot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap }
+.warn { font-size: 12px; color: var(--warn) }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.tray-in { max-width: 1240px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap }
+.picked { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0 }
+.tag { display: inline-flex; gap: 6px; align-items: center; background: var(--chip); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12.5px }
+.tag button { font: inherit; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-radius: 999px; padding: 0 6px; font-size: 14px }
+.none { color: var(--muted); flex: 1 }
+.primary { font: inherit; font-weight: 500; background: var(--pick); color: var(--pick-ink); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer }
+.primary:disabled { opacity: .4; cursor: default }
+.out { width: 100%; max-width: 1240px; margin: 8px auto 0; font-family: var(--mono); font-size: 12px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; height: 150px; resize: vertical }
+.toast { font-size: 12.5px; color: var(--muted) }
+/* lab */
+.lab { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.panel label.t, .panel .t { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.panel input[type="color"] { width: 46px; height: 40px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer }
+.panel input[type="text"], .panel select { font: inherit; font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0 }
+.panel select { font-family: var(--font) }
+.panel input[type="text"].hexin { width: 110px }
+input[type="range"] { width: 100%; accent-color: var(--ink) }
+.hueTrack { height: 12px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--line) }
+.names { display: flex; flex-wrap: wrap; gap: 6px }
+.nm { font-size: 12px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 4px 10px 4px 6px; display: inline-flex; gap: 6px; align-items: center }
+.nm i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line) }
+.nm[aria-pressed="true"] { border-color: var(--ink) }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--chip); border-radius: 9px; padding: 3px }
+.seg button { font-size: 12.5px; color: var(--ink); background: transparent; border: 0; border-radius: 7px; padding: 6px 10px }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 0 0 1px var(--line) }
+.seg button:disabled { opacity: .4; cursor: default }
+.styles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px }
+.styles button { font: inherit; font-size: 11px; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 5px 4px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; align-items: center }
+.styles button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.styles button:disabled { opacity: .4; cursor: default }
+.styles .pair { display: flex; width: 100%; height: 22px; border-radius: 5px; overflow: hidden; border: 1px solid var(--line) }
+.styles .pair b { flex: 1 }
+.hint { font-size: 12px; color: var(--muted); margin: 6px 0 0 }
+.res { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.six .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.six .cell span { font-size: 11px; color: var(--muted) }
+.six .cell .in { display: flex; gap: 6px; align-items: center }
+.six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px }
+.six input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.six .edited input { border-color: var(--ink) }
+.rep { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 }
+.rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em }
+.rep td.num { font-family: var(--mono); text-align: right }
+.good { color: var(--ok) } .poor { color: var(--bad) }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.cmp .col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.cmp h4 { margin: 0; font-size: 14px } .cmp p { margin: 0; color: var(--muted); font-size: 12.5px }
+.sweep { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+.sweep button { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 6px }
+.sweep button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.sweep .lab2 { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.chk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.slotrow { display: grid; grid-template-columns: 1.2fr 1fr 1fr 70px; gap: 8px; align-items: center; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--line) }
+.slotrow span.sw2 { display: flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 11.5px }
+.sw2 i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line); flex: none }
+.methods details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px }
+.methods summary { cursor: pointer; font-weight: 500 }
+.methods p { color: var(--muted); font-size: 13px; margin: 8px 0 0; max-width: 90ch }
+@media (max-width: 980px) { .lab { grid-template-columns: 1fr } .cmp, .chk { grid-template-columns: 1fr } }
+@media (max-width: 560px) { .tiles { grid-template-columns: 1fr } .hex { grid-template-columns: 1fr } .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } .slotrow { grid-template-columns: 1fr 1fr 1fr } .slotrow .d { display: none } body { padding-bottom: 190px } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .12s } }
+
+/* simplified one-colour tab */
+.pickrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+.cc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.cc[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.cc .nm2 { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500 }
+.cc .nm2 i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); flex: none }
+.cc .hx { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.custom { cursor: default }
+.custom .row { gap: 6px }
+.custom input[type="color"] { width: 38px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); cursor: pointer }
+.custom input[type="text"] { font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 8px; width: 100%; min-width: 0 }
+.custom input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.result { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px }
+.status { font-size: 13px; margin: 0 }
+.status.ok::before { content: "✓ "; color: var(--ok) } .status.note { color: var(--warn) }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+details.fold { border-top: 1px solid var(--line); padding-top: 10px } details.fold summary { cursor: pointer; font-weight: 500; font-size: 13px }
+.six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px }
+.six .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .six .cell span { font-size: 11px; color: var(--muted) } .six .cell .in { display: flex; gap: 6px; align-items: center }
+.six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px } .six input[type="text"][aria-invalid="true"] { border-color: var(--bad) } .six .edited input { border-color: var(--ink) }
+.rep { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px } .rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 } .rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em } .rep td.num { font-family: var(--mono); text-align: right } .good { color: var(--ok) } .poor { color: var(--bad) }
+.decided { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; max-width: 90ch } .decided li { margin-bottom: 4px }
+.micro .tile .btn { font-size: 9px; padding: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.foot2 { margin-top: 30px; color: var(--muted); font-size: 13px }
+@media (max-width: 560px) { .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+</style>
+<div class="wrap">
+  <h1>Site colour picker</h1>
+  <p class="lede">Colours for the visitor site's theme. <b>Presets</b>: <span id="count"></span> ready-made light and dark sets. <b>One colour</b>: pick a single brand colour and get all six colours back (primary, page background and card, for light and dark). Every tile is drawn with the rules of the Preview on the admin Site &gt; Theme page.</p>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="t-lab" aria-selected="true" aria-controls="tab-lab" type="button">One colour</button>
+    <button class="tab" role="tab" id="t-presets" aria-selected="false" aria-controls="tab-presets" type="button">Presets</button>
+  </div>
+
+  <section id="tab-lab" role="tabpanel" aria-labelledby="t-lab">
+    <p class="small">Pick one of these, or type your own. Each card already shows what you would get.</p>
+    <div class="pickrow" id="pickrow"></div>
+    <div class="result">
+      <div class="tiles" id="resTiles"></div>
+      <p class="status" id="status"></p>
+      <div class="actions"><button class="primary" id="copyList" type="button">Copy the six colours</button><button class="ghost" id="resetEdits" type="button" hidden>Undo my edits</button></div>
+      <details class="fold"><summary>Fine-tune the six colours</summary><div class="six" id="six"></div><p class="small" style="margin-top:8px">Edit any of them; the tiles follow. For a deeper black in dark mode, lower the dark page background.</p></details>
+      <details class="fold"><summary>Readability checks</summary><div id="report"></div></details>
+      <details class="fold"><summary>What is decided for you, and why</summary>
+        <ul class="decided">
+          <li><b>Your colour is the light primary, unchanged.</b></li>
+          <li><b>Dark primary:</b> the same hue and vividness, made lighter only when it is too dark for a dark page (lightness floor 0.68). In 13 real themes the dark accent is at the median only 0.12 lighter than the light one, and four use the same colour in both modes.</li>
+          <li><b>Page and card:</b> near white in light mode, near black in dark mode, with a faint tint of your hue. The five tint styles the earlier prototype offered differed by at most 0.025 (barely visible), so they are no longer a choice. The dark page sits at lightness 0.23, the median of the 13 real themes (their range is 0.15 to 0.33).</li>
+          <li><b>One method:</b> hand-written rules in OKLCH, which came closest to the real themes (mean distance 0.041 against 0.067 for Material 3 and 0.064 for Ant Design). The comparison is on the research page.</li>
+        </ul></details>
+    </div>
+  </section>
+
+  <section id="tab-presets" role="tabpanel" aria-labelledby="t-presets" hidden>
+    <div class="bar" id="bar" role="group" aria-label="Filter by family"></div>
+    <div class="grid" id="grid"></div>
+    <div class="none" id="empty" hidden>Nothing picked yet. Press Pick on a card.</div>
+  </section>
+  <p class="foot2">Research version with the three methods side by side, a twelve-hue sweep and the check against real themes: <a href="research.html">research.html</a>. Design issue and data: <a href="https://github.com/cheesecave/cheesecave-admin/issues/23" target="_blank" rel="noopener noreferrer">cheesecave-admin#23</a>.</p>
+</div>
+<div class="tray" id="tray" hidden>
+  <div class="tray-in">
+    <b id="tlabel">Picked</b><div class="picked" id="picked"></div><span class="toast" id="toast" role="status"></span>
+    <button class="ghost" id="clear" type="button">Clear</button><button class="primary" id="copy" type="button">Copy picks</button>
+  </div>
+  <div class="tray-in"><textarea class="out" id="out" aria-label="Copied text" readonly hidden></textarea></div>
+</div>
+<script>
+const PRESETS = [{"id":"hub-yellow","name":"Hub Yellow","family":"Hub & product","note":"After Hugging Face: a warm yellow on white, and its deep navy dark page.","light":{"primary":"#f2b300","background":"#ffffff","card":"#f8f9fb"},"dark":{"primary":"#ffd21e","background":"#0b0f19","card":"#101623"},"prov":"partial"},{"id":"github-primer","name":"GitHub Primer","family":"Hub & product","note":"GitHub's own light and dark: link blue on white, then #0d1117.","light":{"primary":"#0969da","background":"#ffffff","card":"#f6f8fa"},"dark":{"primary":"#58a6ff","background":"#0d1117","card":"#161b22"},"prov":"partial"},{"id":"gitlab-orange","name":"GitLab Orange","family":"Hub & product","note":"A forge-style orange with neutral grey surfaces.","light":{"primary":"#e24329","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#fc6d26","background":"#1f1e24","card":"#2b2a33"},"prov":"memory"},{"id":"kaggle-sky","name":"Kaggle Sky","family":"Hub & product","note":"Data-platform cyan-blue on clean white.","light":{"primary":"#0f9bd7","background":"#ffffff","card":"#f5f8fa"},"dark":{"primary":"#20beff","background":"#0f1419","card":"#181e26"},"prov":"memory"},{"id":"docs-green","name":"Docs Green","family":"Hub & product","note":"The green of documentation sites: calm, long-form friendly.","light":{"primary":"#2e8555","background":"#ffffff","card":"#f5f6f7"},"dark":{"primary":"#25c2a0","background":"#1b1b1d","card":"#242526"},"prov":"memory"},{"id":"material-indigo","name":"Material Indigo","family":"Hub & product","note":"Material's indigo with a slate dark page.","light":{"primary":"#3f51b5","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#9fa8da","background":"#1e2129","card":"#282c37"},"prov":"memory"},{"id":"cloud-blue","name":"Cloud Blue","family":"Cool & clear","note":"The safe, trustworthy blue on a cool slate dark.","light":{"primary":"#2563eb","background":"#f8fafc","card":"#ffffff"},"dark":{"primary":"#60a5fa","background":"#0f172a","card":"#1e293b"},"prov":"original"},{"id":"indigo","name":"Indigo","family":"Cool & clear","note":"Deeper and a little more distinctive than plain blue.","light":{"primary":"#4f46e5","background":"#f8f9fc","card":"#ffffff"},"dark":{"primary":"#818cf8","background":"#111827","card":"#1f2937"},"prov":"original"},{"id":"violet","name":"Violet","family":"Cool & clear","note":"A model-lab purple with a tinted dark page.","light":{"primary":"#7c3aed","background":"#faf8ff","card":"#ffffff"},"dark":{"primary":"#a78bfa","background":"#17121f","card":"#211a2e"},"prov":"original"},{"id":"sky","name":"Sky","family":"Cool & clear","note":"Light, open, friendly.","light":{"primary":"#0284c7","background":"#f4f9fc","card":"#ffffff"},"dark":{"primary":"#38bdf8","background":"#0b1520","card":"#112030"},"prov":"original"},{"id":"cyan-hub","name":"Cyan Hub","family":"Cool & clear","note":"Cyan on the navy-black dark page of a model hub.","light":{"primary":"#0891b2","background":"#f3f7f9","card":"#ffffff"},"dark":{"primary":"#22d3ee","background":"#0b0f19","card":"#101623"},"prov":"original"},{"id":"navy","name":"Navy","family":"Cool & clear","note":"Formal and institutional.","light":{"primary":"#1d4ed8","background":"#f1f5f9","card":"#ffffff"},"dark":{"primary":"#93c5fd","background":"#0b1220","card":"#121b2e"},"prov":"original"},{"id":"emerald","name":"Emerald","family":"Warm & natural","note":"Fresh green, nature and growth.","light":{"primary":"#059669","background":"#f3f8f5","card":"#ffffff"},"dark":{"primary":"#34d399","background":"#0e1512","card":"#16211b"},"prov":"original"},{"id":"sage","name":"Sage","family":"Warm & natural","note":"A muted grey-green that stays out of the way.","light":{"primary":"#52796f","background":"#f4f7f4","card":"#ffffff"},"dark":{"primary":"#84a98c","background":"#1a221f","card":"#243029"},"prov":"original"},{"id":"mint","name":"Mint","family":"Warm & natural","note":"Cool green-teal with a clinical clean feel.","light":{"primary":"#0f766e","background":"#f0f9f7","card":"#ffffff"},"dark":{"primary":"#5eead4","background":"#0b1a18","card":"#112321"},"prov":"original"},{"id":"amber","name":"Amber","family":"Warm & natural","note":"Honey amber on warm white and a brown-black dark page.","light":{"primary":"#d97706","background":"#fffaf0","card":"#ffffff"},"dark":{"primary":"#fbbf24","background":"#17120a","card":"#221a0d"},"prov":"original"},{"id":"terracotta","name":"Terracotta","family":"Warm & natural","note":"Burnt orange with warm stone neutrals.","light":{"primary":"#c2410c","background":"#fbf7f3","card":"#ffffff"},"dark":{"primary":"#fb923c","background":"#1c1917","card":"#292524"},"prov":"original"},{"id":"coral","name":"Coral","family":"Warm & natural","note":"A lively red-orange; friendly, consumer-facing.","light":{"primary":"#e5533d","background":"#fff8f5","card":"#ffffff"},"dark":{"primary":"#ff7b63","background":"#1c1210","card":"#281a16"},"prov":"original"},{"id":"rose","name":"Rose","family":"Warm & natural","note":"Strong crimson-pink; makes buttons obvious.","light":{"primary":"#e11d48","background":"#fff7f8","card":"#ffffff"},"dark":{"primary":"#fb7185","background":"#1a0f12","card":"#261519"},"prov":"original"},{"id":"berry","name":"Berry","family":"Warm & natural","note":"Magenta-berry for a creative community.","light":{"primary":"#be185d","background":"#fdf4f9","card":"#ffffff"},"dark":{"primary":"#f472b6","background":"#1f1020","card":"#2b172c"},"prov":"original"},{"id":"copper","name":"Copper","family":"Warm & natural","note":"A brown-gold with paper-like warmth.","light":{"primary":"#a35a12","background":"#faf6f0","card":"#ffffff"},"dark":{"primary":"#e0a060","background":"#1d1814","card":"#28211b"},"prov":"original"},{"id":"olive-gold","name":"Olive Gold (current)","family":"Warm & natural","note":"The theme the site ships with today, for reference.","light":{"primary":"#94621f","background":"#f7f4eb","card":"#fffdf7"},"dark":{"primary":"#e6b85c","background":"#1c211d","card":"#282e27"},"prov":"original"},{"id":"catppuccin-mauve","name":"Catppuccin Mauve","family":"Editor classics","note":"Catppuccin Latte and Mocha, mauve accent.","light":{"primary":"#8839ef","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#cba6f7","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-blue","name":"Catppuccin Blue","family":"Editor classics","note":"Catppuccin Latte and Mocha, blue accent.","light":{"primary":"#1e66f5","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#89b4fa","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-green","name":"Catppuccin Green","family":"Editor classics","note":"Catppuccin Latte and Mocha, green accent.","light":{"primary":"#40a02b","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#a6e3a1","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"rosepine-iris","name":"Rosé Pine Iris","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, iris accent.","light":{"primary":"#907aa9","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#c4a7e7","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"rosepine-rose","name":"Rosé Pine Rose","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, rose accent.","light":{"primary":"#b4637a","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#ebbcba","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"nord","name":"Nord","family":"Editor classics","note":"Nord's frost blue on snow white and polar night.","light":{"primary":"#5e81ac","background":"#eceff4","card":"#ffffff"},"dark":{"primary":"#88c0d0","background":"#2e3440","card":"#3b4252"},"prov":"memory"},{"id":"gruvbox-orange","name":"Gruvbox Orange","family":"Editor classics","note":"Gruvbox's retro paper and dark, orange accent.","light":{"primary":"#af3a03","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#fe8019","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"gruvbox-green","name":"Gruvbox Green","family":"Editor classics","note":"Gruvbox's retro paper and dark, green accent.","light":{"primary":"#79740e","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#b8bb26","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"tokyo-night","name":"Tokyo Night","family":"Editor classics","note":"Tokyo Night Day and Night, blue accent.","light":{"primary":"#2e7de9","background":"#e1e2e7","card":"#f2f3f7"},"dark":{"primary":"#7aa2f7","background":"#1a1b26","card":"#24283b"},"prov":"memory"},{"id":"dracula","name":"Dracula","family":"Editor classics","note":"Dracula's purple with the Alucard light page.","light":{"primary":"#644ac9","background":"#fffbeb","card":"#ffffff"},"dark":{"primary":"#bd93f9","background":"#282a36","card":"#343746"},"prov":"memory"},{"id":"everforest","name":"Everforest","family":"Editor classics","note":"A soft green on cream, and a green-grey dark.","light":{"primary":"#8da101","background":"#fdf6e3","card":"#f4f0d9"},"dark":{"primary":"#a7c080","background":"#2d353b","card":"#343f44"},"prov":"memory"},{"id":"kanagawa","name":"Kanagawa","family":"Editor classics","note":"Kanagawa Lotus and Wave: Japanese-print muted blue.","light":{"primary":"#4d699b","background":"#f2ecbc","card":"#f9f5d7"},"dark":{"primary":"#7e9cd8","background":"#1f1f28","card":"#2a2a37"},"prov":"memory"},{"id":"ayu","name":"Ayu","family":"Editor classics","note":"Ayu Light and Mirage: a bright orange to gold.","light":{"primary":"#ff9940","background":"#fcfcfc","card":"#ffffff"},"dark":{"primary":"#ffcc66","background":"#1f2430","card":"#242b38"},"prov":"memory"},{"id":"darcula-orange","name":"Darcula Orange","family":"Editor classics","note":"JetBrains Darcula dark (#2b2b2b editor, #3c3f41 panels, keyword orange). The light side is my pairing, not an official Darcula light.","light":{"primary":"#a8570f","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#cc7832","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"darcula-blue","name":"Darcula Blue","family":"Editor classics","note":"JetBrains Darcula dark with its steel-blue number colour (#6897bb). The light side is my pairing.","light":{"primary":"#2f6ea8","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#6897bb","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"monokai-pink","name":"Monokai Pink","family":"Editor classics","note":"Monokai's #272822 with its pink; the light side is my pairing.","light":{"primary":"#d6155e","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#f92672","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"monokai-green","name":"Monokai Green","family":"Editor classics","note":"Monokai's #272822 with its green; the light side is my pairing.","light":{"primary":"#5f8f12","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#a6e22e","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"palenight","name":"Palenight","family":"Editor classics","note":"Material Palenight dark (#292d3e, purple #c792ea); the light side is a Material-style pairing.","light":{"primary":"#7e57c2","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#c792ea","background":"#292d3e","card":"#34374b"},"prov":"partial"},{"id":"night-owl","name":"Night Owl","family":"Editor classics","note":"Night Owl's deep navy and Light Owl; colours from memory, not checked against the source.","light":{"primary":"#4876d6","background":"#fbfbfb","card":"#ffffff"},"dark":{"primary":"#82aaff","background":"#011627","card":"#0b2942"},"prov":"memory"},{"id":"solarized","name":"Solarized","family":"Editor classics","note":"Ethan Schoonover's palette: base3 and base2 for light, base03 and base02 for dark, with the blue swatch as the accent.","light":{"primary":"#268bd2","background":"#eee8d5","card":"#fdf6e3"},"dark":{"primary":"#268bd2","background":"#002b36","card":"#073642"},"prov":"official","source":["Official palette","https://ethanschoonover.com/solarized/"],"market":"Solarized Theme for JetBrains: about 2.5M downloads"},{"id":"vitesse","name":"Vitesse","family":"Editor classics","note":"antfu's Vitesse: one green, deeper in light and lighter in dark. The source has no raised surface, so the page tone is my pairing.","light":{"primary":"#1c6b48","background":"#f5f5f3","card":"#ffffff"},"dark":{"primary":"#4d9375","background":"#0c0c0c","card":"#121212"},"prov":"official","source":["Official theme files","https://github.com/antfu/vscode-theme-vitesse"],"market":"119k installs on the VS Code Marketplace"},{"id":"min","name":"Min","family":"Editor classics","note":"Min Light and Min Dark: monochrome, no accent hue at all.","light":{"primary":"#757575","background":"#f6f6f6","card":"#ffffff"},"dark":{"primary":"#cccccc","background":"#1a1a1a","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/miguelsolorio/min-theme"],"market":"634k installs on the VS Code Marketplace"},{"id":"winter-is-coming","name":"Winter is Coming","family":"Editor classics","note":"A cold blue with plain greys. The dark source has one surface only, so its card is my pairing.","light":{"primary":"#236ebf","background":"#f3f3f3","card":"#ffffff"},"dark":{"primary":"#219fd5","background":"#282822","card":"#32322b"},"prov":"official","source":["Official theme files","https://github.com/johnpapa/vscode-winteriscoming"],"market":"3.76M installs on the VS Code Marketplace"},{"id":"noctis","name":"Noctis","family":"Editor classics","note":"Noctis Lux (warm cream) and Noctis (deep teal): one teal-cyan accent.","light":{"primary":"#0099ad","background":"#f9f1e1","card":"#fef8ec"},"dark":{"primary":"#40d4e7","background":"#041d20","card":"#052529"},"prov":"official","source":["Official theme files","https://github.com/liviuschera/noctis"],"market":"1.40M installs on the VS Code Marketplace"},{"id":"bluloco","name":"Bluloco","family":"Editor classics","note":"Bluloco Light and Dark: a sky blue and a brighter royal blue.","light":{"primary":"#0099e1","background":"#e8e8e8","card":"#f9f9f9"},"dark":{"primary":"#3691ff","background":"#22252a","card":"#282c34"},"prov":"official","source":["Official theme files","https://github.com/uloco/theme-bluloco-light"],"market":"about 530k installs on the VS Code Marketplace"},{"id":"horizon","name":"Horizon","family":"Editor classics","note":"Horizon Bright and Horizon: a single pink-red. The source has one surface per mode; the card is my pairing.","light":{"primary":"#e84a72","background":"#fdf0ed","card":"#ffffff"},"dark":{"primary":"#e95378","background":"#1c1e26","card":"#262833"},"prov":"official","source":["Official theme files","https://github.com/jolaleye/horizon-theme-vscode"],"market":"about 163k installs (a fork; the original was removed)"},{"id":"flexoki","name":"Flexoki","family":"Editor classics","note":"Steph Ango's Flexoki: warm paper and black, with the cyan accent of the VS Code port.","light":{"primary":"#24837b","background":"#f2f0e5","card":"#fffcf0"},"dark":{"primary":"#3aa99f","background":"#100f0f","card":"#1c1b1a"},"prov":"official","source":["Official palette and VS Code port","https://stephango.com/flexoki"]},{"id":"vscode-modern","name":"VS Code Modern","family":"Editor classics","note":"VS Code's current built-in Light Modern and Dark Modern with their single blue.","light":{"primary":"#005fb8","background":"#f8f8f8","card":"#ffffff"},"dark":{"primary":"#0078d4","background":"#181818","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes"]},{"id":"selenized","name":"Selenized","family":"Editor classics","note":"Jan Warchol's Selenized: a careful remake of Solarized with better contrast.","light":{"primary":"#0072d4","background":"#ece3cc","card":"#fbf3db"},"dark":{"primary":"#4695f7","background":"#103c48","card":"#184956"},"prov":"official","source":["Official palette","https://github.com/jan-warchol/selenized"]},{"id":"papercolor","name":"PaperColor","family":"Editor classics","note":"The PaperColor Vim theme: soft greys with a navy and a teal.","light":{"primary":"#005f87","background":"#e4e4e4","card":"#eeeeee"},"dark":{"primary":"#00afaf","background":"#1c1c1c","card":"#303030"},"prov":"official","source":["Official Vim theme","https://github.com/NLKNguyen/papercolor-theme"]},{"id":"one-zed","name":"One (Zed)","family":"Editor classics","note":"Zed's built-in One Light and One Dark, descended from Atom One.","light":{"primary":"#5c78e2","background":"#ebebec","card":"#fafafa"},"dark":{"primary":"#74ade8","background":"#282c33","card":"#2f343e"},"prov":"official","source":["Official theme file","https://github.com/zed-industries/zed/blob/main/assets/themes/one/one.json"],"market":"descended from Atom One; One Dark for JetBrains: about 11.8M downloads"},{"id":"adwaita","name":"Adwaita","family":"Editor classics","note":"GNOME's Adwaita: the same blue in both modes.","light":{"primary":"#3584e4","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#3584e4","background":"#1d1d1d","card":"#242424"},"prov":"official","source":["Official theme files","https://github.com/piousdeer/vscode-adwaita"],"market":"96k installs on the VS Code Marketplace"},{"id":"graphite","name":"Graphite","family":"Neutral","note":"Colourless grey; lets the content carry the colour.","light":{"primary":"#374151","background":"#f9fafb","card":"#ffffff"},"dark":{"primary":"#d1d5db","background":"#111111","card":"#1b1b1b"},"prov":"original"},{"id":"ink","name":"Ink","family":"Neutral","note":"Black and white, nothing else.","light":{"primary":"#111111","background":"#ffffff","card":"#fafafa"},"dark":{"primary":"#fafafa","background":"#09090b","card":"#18181b"},"prov":"original"},{"id":"paper","name":"Paper","family":"Neutral","note":"Sepia paper with a brown accent, for long reading.","light":{"primary":"#7a4a21","background":"#f4ecd8","card":"#fbf5e6"},"dark":{"primary":"#d9a066","background":"#1e1812","card":"#2a2118"},"prov":"original"},{"id":"high-contrast","name":"High Contrast","family":"Neutral","note":"Maximum contrast: pure white and pure black pages.","light":{"primary":"#0033cc","background":"#ffffff","card":"#ffffff"},"dark":{"primary":"#66b3ff","background":"#000000","card":"#0d0d0d"},"prov":"original"}];
+// ---------- colour maths (OKLab / OKLCH) ----------
+const rgb = (h) => h.match(/[a-f\d]{2}/gi).map((p) => parseInt(p, 16));
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+const toOklab = (hex) => { const [r, g, b] = rgb(hex).map((v) => lin(v / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s] };
+const toOklch = (hex) => { const [L, a, b] = toOklab(hex); let h = (Math.atan2(b, a) * 180) / Math.PI; if (h < 0) h += 360; return { L, C: Math.hypot(a, b), h } };
+const fromOklab = (L, a, b) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s] };
+const fromOklch = (L, C, h) => { const r = (h * Math.PI) / 180; return fromOklab(L, C * Math.cos(r), C * Math.sin(r)) };
+const inGamut = (v) => v.every((c) => c >= -0.0005 && c <= 1.0005);
+const rgb2hex = (v) => "#" + v.map((c) => Math.round(Math.min(1, Math.max(0, gam(Math.min(1, Math.max(0, c))))) * 255).toString(16).padStart(2, "0")).join("");
+const maxChroma = (L, h) => { let lo = 0, hi = 0.4; for (let i = 0; i < 28; i++) { const mid = (lo + hi) / 2; inGamut(fromOklch(L, mid, h)) ? (lo = mid) : (hi = mid) } return lo };
+const oklch2hex = (L, C, h) => rgb2hex(fromOklch(L, Math.min(C, maxChroma(L, h)), h));
+const dE = (a, b) => { const x = toOklab(a), y = toOklab(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) };
+// ---------- the site's own derivation (src/shared/site-theme.js: text, link, button text, border) ----------
+const mix = (c, t, w) => { const d = rgb(t); return "#" + rgb(c).map((ch, i) => Math.round(ch + (d[i] - ch) * w).toString(16).padStart(2, "0")).join("") };
+const lum = (h) => { const c = rgb(h).map((v) => lin(v / 255)); return c[0] * .2126 + c[1] * .7152 + c[2] * .0722 };
+const ratio = (a, b) => { const v = [lum(a), lum(b)].sort((x, y) => y - x); return (v[0] + .05) / (v[1] + .05) };
+const contrastText = (bg) => ratio(bg, "#ffffff") >= ratio(bg, "#000000") ? "#ffffff" : "#000000";
+const softText = (bg) => { const ink = "#2c332b", cream = "#eef0e7"; const p = ratio(bg, ink) >= ratio(bg, cream) ? ink : cream; return ratio(bg, p) >= 4.5 ? p : contrastText(bg) };
+const readableSoft = (color, bg) => { const t = softText(bg); for (let s = 0; s <= 20; s++) { const c = mix(color, t, s / 20); if (ratio(c, bg) >= 4.5) return c } return t };
+function palette({ primary, background, card }) { const cardText = softText(card); return { text: softText(background), cardText, btn: softText(primary), link: readableSoft(primary, card), border: mix(cardText, card, .82) } }
+// APCA (0.0.98G), shown as information only: WCAG 2 is the compliance test, APCA is a better guide in dark mode.
+const apcaY = (hex) => { const [r, g, b] = rgb(hex).map((v) => (v / 255) ** 2.4); const Y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b; return Y < 0.022 ? Y + (0.022 - Y) ** 1.414 : Y };
+function apca(txt, bg) { const t = apcaY(txt), b = apcaY(bg); if (Math.abs(b - t) < 0.0005) return 0; if (b > t) { const s = (b ** 0.56 - t ** 0.57) * 1.14; return s < 0.1 ? 0 : (s - 0.027) * 100 } const s = (b ** 0.65 - t ** 0.62) * 1.14; return s > -0.1 ? 0 : Math.abs((s + 0.027) * 100) }
+
+// ---------- shared view helpers ----------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function tile(mode, t) {
+  const p = palette(t);
+  const style = `--t-bg:${t.background};--t-card:${t.card};--t-text:${p.text};--t-card-text:${p.cardText};--t-primary:${t.primary};--t-btn-text:${p.btn};--t-link:${p.link};--t-border:${p.border}`;
+  return `<div class="tile" style="${style}"><span class="mode">${mode === "light" ? "Light mode" : "Dark mode"}</span><div class="pc"><p class="eyebrow">YOUR NEXT PROJECT</p><h4>A home for your ideas</h4><p class="body">Share models and datasets with your community.</p><span class="lnk">Browse repositories →</span><span class="btn">Create repository</span></div></div>`;
+}
+const tiles = (set, mini) => `<div class="tiles${mini ? " " + (mini === true ? "mini" : mini) : ""}">${tile("light", set.light)}${tile("dark", set.dark)}</div>`;
+const hexRows = (t) => ["primary", "background", "card"].map((k) => `<span><i class="sw" style="background:${t[k]}"></i>${t[k]} <small>${k}</small></span>`).join("");
+const toast = (m) => { $("toast").textContent = m; clearTimeout(toast.t); toast.t = setTimeout(() => { $("toast").textContent = "" }, 2200) };
+async function copyText(str, label) {
+  const out = $("out");
+  try { await navigator.clipboard.writeText(str); out.hidden = true; toast(label + " copied") }
+  catch (e) { out.hidden = false; out.value = str; out.focus(); out.select(); toast("Select and copy the text below") }
+}
+const validHex = (v) => /^#[0-9a-f]{6}$/i.test(v);
+
+// ---------- Presets tab ----------
+let family = "All", picks = new Set();
+try { picks = new Set(JSON.parse(localStorage.getItem("theme-picks") || "[]").filter((id) => PRESETS.some((p) => p.id === id))) } catch (e) {}
+const savePicks = () => { try { localStorage.setItem("theme-picks", JSON.stringify([...picks])) } catch (e) {} };
+const FAMILIES = ["All", ...new Set(PRESETS.map((p) => p.family))];
+const PROV = { partial: "Partly official: the dark side is checked against published colours, the rest is my pairing", memory: "From memory, not checked against a source", original: "Original design" };
+function provHtml(p) {
+  if (p.prov === "official") return `<span class="prov">Official values · <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])}</a>${p.market ? " · " + esc(p.market) : ""}</span>`;
+  return `<span class="prov">${esc(PROV[p.prov])}</span>`;
+}
+function card(p) {
+  const weak = ["light", "dark"].filter((m) => ratio(p[m].primary, p[m].card) < 3);
+  const warn = weak.length ? `<span class="warn">Link text is darkened automatically in ${weak.join(" and ")} mode (the primary is pale on the card).</span>` : "<span></span>";
+  const on = picks.has(p.id);
+  return `<article class="card" data-id="${p.id}" data-picked="${on}"><div class="head"><div><p class="fam">${esc(p.family)}</p><h3>${esc(p.name)}</h3><p class="note">${esc(p.note)}</p>${provHtml(p)}</div><button class="pick" type="button" data-pick="${p.id}" aria-pressed="${on}">${on ? "✓ Picked" : "Pick"}</button></div>${tiles(p)}<div class="hex"><div>${hexRows(p.light)}</div><div>${hexRows(p.dark)}</div></div><div class="foot">${warn}<button class="ghost" type="button" data-copy="${p.id}">Copy 6 colours</button></div></article>`;
+}
+function renderPresets() {
+  const n = (f) => f === "All" ? PRESETS.length : f === "Official" ? PRESETS.filter((p) => p.prov === "official").length : PRESETS.filter((p) => p.family === f).length;
+  $("bar").innerHTML = [...FAMILIES, "Official"].map((f) => `<button class="chip" type="button" aria-pressed="${family === f}" data-f="${esc(f)}">${f === "Official" ? "Official values only" : esc(f)}<span class="n">${n(f)}</span></button>`).join("") + `<button class="chip" type="button" aria-pressed="${family === "Picked"}" data-f="Picked">Picked<span class="n">${picks.size}</span></button>`;
+  const list = family === "All" ? PRESETS : family === "Picked" ? PRESETS.filter((p) => picks.has(p.id)) : family === "Official" ? PRESETS.filter((p) => p.prov === "official") : PRESETS.filter((p) => p.family === family);
+  $("grid").innerHTML = list.map(card).join(""); $("empty").hidden = !(family === "Picked" && !list.length);
+  $("picked").innerHTML = PRESETS.filter((p) => picks.has(p.id)).map((p) => `<span class="tag">${esc(p.name)}<button type="button" data-unpick="${p.id}" aria-label="Remove ${esc(p.name)}">×</button></span>`).join("") || `<span class="none">Nothing picked yet</span>`;
+  $("tlabel").textContent = `Picked ${picks.size}`; $("copy").disabled = !picks.size; $("clear").hidden = !picks.size;
+}
+const presetText = (p) => `${p.name} [${p.id}]\n  light: primary ${p.light.primary}, background ${p.light.background}, card ${p.light.card}\n  dark:  primary ${p.dark.primary}, background ${p.dark.background}, card ${p.dark.card}`;
+
+// ---------- One colour (the simplified tab) ----------
+// Everything except the brand colour is decided: see "What is decided for you".
+function derive(primary) {
+  const { L, C, h } = toOklch(primary), Ld = Math.max(L, 0.68), bgL = 0.23, cardL = bgL + 0.05;
+  return { light: { primary, background: oklch2hex(0.96, 0.006, h), card: "#ffffff" }, dark: { primary: oklch2hex(Ld, C, h), background: oklch2hex(bgL, 0.01, h), card: oklch2hex(cardL, 0.012, h) } };
+}
+const KEYS = [["light", "primary"], ["light", "background"], ["light", "card"], ["dark", "primary"], ["dark", "background"], ["dark", "card"]];
+const KEYNAME = { primary_light: ["light", "primary"], background_light: ["light", "background"], card_light: ["light", "card"], primary_dark: ["dark", "primary"], background_dark: ["dark", "background"], card_dark: ["dark", "card"] };
+const NAMED = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Pink", "#db2777"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
+const lab = { brand: "#2563eb", edits: {} };
+function current() { const g = derive(lab.brand), r = { light: { ...g.light }, dark: { ...g.dark } }; for (const [k, v] of Object.entries(lab.edits)) { const [m, s] = KEYNAME[k]; r[m][s] = v } return r }
+function renderPick() {
+  const custom = !NAMED.some(([, h]) => h === lab.brand);
+  $("pickrow").innerHTML = `<div class="cc custom" aria-pressed="${custom}"><span class="nm2"><i style="background:${lab.brand}"></i>Your colour</span><div class="row"><input type="color" id="pickc" value="${lab.brand}" aria-label="Brand colour picker"><input type="text" id="hexin" value="${lab.brand}" maxlength="7" spellcheck="false" aria-label="Brand colour as hex"></div></div>` +
+    NAMED.map(([n, h]) => `<button type="button" class="cc" data-name="${h}" aria-pressed="${lab.brand === h}"><span class="nm2"><i style="background:${h}"></i>${n}</span>${tiles(derive(h), "micro")}<span class="hx">${h}</span></button>`).join("");
+}
+function renderResult() {
+  const r = current();
+  $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark);
+  const labels = { primary: "Primary", background: "Page background", card: "Card" };
+  $("six").innerHTML = KEYS.map(([m, s]) => { const k = `${s}_${m}`, edited = k in lab.edits; return `<div class="cell ${edited ? "edited" : ""}"><span>${m === "light" ? "Light" : "Dark"} · ${labels[s]}</span><div class="in"><i class="sw" style="background:${r[m][s]}"></i><input type="text" data-key="${k}" value="${r[m][s]}" maxlength="7" spellcheck="false" aria-label="${m} ${labels[s]}"></div></div>` }).join("");
+  $("resetEdits").hidden = !Object.keys(lab.edits).length;
+  const rows = (m) => { const t = r[m], p = palette(t); return { text: ratio(p.text, t.background), card: ratio(p.cardText, t.card), btn: ratio(p.btn, t.primary), link: ratio(p.link, t.card), raw: ratio(t.primary, t.card) } };
+  const L = rows("light"), D = rows("dark");
+  const darkened = ["light", "dark"].filter((m) => (m === "light" ? L : D).raw < 3);
+  $("status").className = "status " + (darkened.length ? "note" : "ok");
+  $("status").textContent = darkened.length ? `Text, buttons and links are readable in both modes. In ${darkened.join(" and ")} mode the site darkens link text a little, because this colour is pale on the card.` : "Text, buttons and links are readable in both modes.";
+  const cell = (v) => `<td class="num ${v >= 4.5 ? "good" : "poor"}">${v.toFixed(2)} ${v >= 4.5 ? "✓" : "✗"}</td>`;
+  $("report").innerHTML = `<table class="rep"><thead><tr><th>Check (needs 4.5)</th><th>Light</th><th>Dark</th></tr></thead><tbody><tr><td>Text on the page</td>${cell(L.text)}${cell(D.text)}</tr><tr><td>Text on the card</td>${cell(L.card)}${cell(D.card)}</tr><tr><td>Button text on the primary</td>${cell(L.btn)}${cell(D.btn)}</tr><tr><td>Link text on the card, after the site adjusts it</td>${cell(L.link)}${cell(D.link)}</tr><tr><td>Primary as it is, on the card (information)</td><td class="num">${L.raw.toFixed(2)}</td><td class="num">${D.raw.toFixed(2)}</td></tr></tbody></table>`;
+}
+const setBrand = (hex) => { lab.brand = hex.toLowerCase(); lab.edits = {}; renderPick(); renderResult() };
+function renderLab() { renderPick(); renderResult() }
+
+// ---------- events ----------
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
+  if (t.classList.contains("tab")) { const lb = t.id === "t-lab"; $("t-presets").setAttribute("aria-selected", !lb); $("t-lab").setAttribute("aria-selected", lb); $("tab-presets").hidden = lb; $("tab-lab").hidden = !lb; $("tray").hidden = lb; return }
+  if (t.dataset.f) { family = t.dataset.f; renderPresets() }
+  else if (t.dataset.pick) { picks.has(t.dataset.pick) ? picks.delete(t.dataset.pick) : picks.add(t.dataset.pick); savePicks(); renderPresets() }
+  else if (t.dataset.unpick) { picks.delete(t.dataset.unpick); savePicks(); renderPresets() }
+  else if (t.dataset.copy) { const p = PRESETS.find((x) => x.id === t.dataset.copy); copyText(presetText(p), p.name) }
+  else if (t.id === "copy") copyText(`Picked presets (${picks.size}):\n` + PRESETS.filter((p) => picks.has(p.id)).map(presetText).join("\n"), "Picks")
+  else if (t.id === "clear") { picks.clear(); savePicks(); renderPresets() }
+  else if (t.dataset.name) setBrand(t.dataset.name)
+  else if (t.id === "resetEdits") { lab.edits = {}; renderResult() }
+  else if (t.id === "copyList") { const r = current(); copyText(Object.entries(KEYNAME).map(([k, [m, s]]) => `${k}: ${r[m][s]}`).join("\n"), "The six colours") }
+});
+document.addEventListener("input", (e) => { const i = e.target;
+  if (i.id === "pickc") setBrand(i.value);
+  else if (i.id === "hexin") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.brand = v.toLowerCase(); lab.edits = {}; const keep = i.selectionStart; const pr = $("pickrow"); const hold = i.value; renderPick(); renderResult(); const n = $("hexin"); n.value = hold; n.focus(); n.setSelectionRange(keep, keep) } }
+  else if (i.dataset && i.dataset.key) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.edits[i.dataset.key] = v.toLowerCase(); const r = current(), [m, s] = KEYNAME[i.dataset.key]; i.closest(".cell").classList.add("edited"); i.previousElementSibling.style.background = r[m][s]; $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark); $("resetEdits").hidden = false } } });
+$("count").textContent = PRESETS.length;
+renderLab(); renderPresets();
+
+</script>
