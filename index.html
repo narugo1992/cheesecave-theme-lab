@@ -144,7 +144,24 @@ details.fold { border-top: 1px solid var(--line); padding-top: 10px } details.fo
 .six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px } .six input[type="text"][aria-invalid="true"] { border-color: var(--bad) } .six .edited input { border-color: var(--ink) }
 .rep { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px } .rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 } .rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em } .rep td.num { font-family: var(--mono); text-align: right } .good { color: var(--ok) } .poor { color: var(--bad) }
 .decided { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; max-width: 90ch } .decided li { margin-bottom: 4px }
-.micro .tile .btn { font-size: 9px; padding: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.micro .tile .btn { font-size: 0; padding: 11px 0; border-radius: 6px }
+/* palette: a lightness / vividness plane at the chosen hue, plus a hue strip */
+.mix { margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 20px; align-items: start }
+.mix .t, .depth .t { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px }
+.plane { position: relative; width: 100%; aspect-ratio: 8 / 5; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); cursor: crosshair; touch-action: none; background: var(--chip) }
+.plane canvas { width: 100%; height: 100%; display: block }
+.plane i { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #000, 0 1px 4px rgba(0,0,0,.4); transform: translate(-50%, -50%); pointer-events: none }
+.plane:focus-visible, .mix input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.hueTrack { height: 12px; border-radius: 6px; margin: 12px 0 6px; border: 1px solid var(--line) }
+.mix input[type="range"], .depth input[type="range"] { width: 100%; accent-color: var(--ink) }
+.mixrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px }
+.mix input[type="color"] { width: 44px; height: 38px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer }
+.mix input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 120px }
+.mix input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.mixside p { margin: 0 0 10px; color: var(--muted); font-size: 13px; max-width: 46ch }
+.mixside .big { font-family: var(--mono); font-size: 22px; color: var(--ink); margin-bottom: 4px }
+.depth { padding-top: 2px } .depth .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
+@media (max-width: 760px) { .mix { grid-template-columns: 1fr } }
 .foot2 { margin-top: 30px; color: var(--muted); font-size: 13px }
 @media (max-width: 560px) { .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
 </style>
@@ -157,19 +174,34 @@ details.fold { border-top: 1px solid var(--line); padding-top: 10px } details.fo
   </div>
 
   <section id="tab-lab" role="tabpanel" aria-labelledby="t-lab">
-    <p class="small">Pick one of these, or type your own. Each card already shows what you would get.</p>
+    <p class="small">Pick one of these, mix your own in the palette below, or type a hex. Each card already shows what you would get.</p>
     <div class="pickrow" id="pickrow"></div>
+    <div class="mix">
+      <div>
+        <span class="t">Mix your own</span>
+        <div class="plane" id="plane" tabindex="0" role="application" aria-label="Colour palette. Arrow keys change lightness and vividness." aria-describedby="planeHint"><canvas id="planeCv" width="320" height="200"></canvas><i id="planeDot"></i></div>
+        <div class="hueTrack" id="hueTrack"></div>
+        <input type="range" id="hue" min="0" max="359" step="1" aria-label="Hue">
+      </div>
+      <div class="mixside">
+        <div class="big" id="bigHex"></div>
+        <p id="planeHint">Drag in the palette: to the right is more vivid, up is lighter. The strip below it sets the hue. Arrow keys work too (Shift for bigger steps).</p>
+        <div class="mixrow"><input type="color" id="pickc" aria-label="System colour picker"><input type="text" id="hexin" maxlength="7" spellcheck="false" aria-label="Brand colour as hex"></div>
+        <p class="hint" id="oklchHint" style="margin-top:10px"></p>
+      </div>
+    </div>
     <div class="result">
       <div class="tiles" id="resTiles"></div>
+      <div class="depth"><label class="t" for="depth">Dark mode depth</label><input type="range" id="depth" min="0" max="100" value="0" aria-label="Dark mode depth, soft to deep"><div class="ends"><span>Soft dark</span><span>Deep dark</span></div></div>
       <p class="status" id="status"></p>
       <div class="actions"><button class="primary" id="copyList" type="button">Copy the six colours</button><button class="ghost" id="resetEdits" type="button" hidden>Undo my edits</button></div>
-      <details class="fold"><summary>Fine-tune the six colours</summary><div class="six" id="six"></div><p class="small" style="margin-top:8px">Edit any of them; the tiles follow. For a deeper black in dark mode, lower the dark page background.</p></details>
+      <details class="fold"><summary>Fine-tune the six colours</summary><div class="six" id="six"></div><p class="small" style="margin-top:8px">Edit any of them; the tiles follow.</p></details>
       <details class="fold"><summary>Readability checks</summary><div id="report"></div></details>
       <details class="fold"><summary>What is decided for you, and why</summary>
         <ul class="decided">
           <li><b>Your colour is the light primary, unchanged.</b></li>
           <li><b>Dark primary:</b> the same hue and vividness, made lighter only when it is too dark for a dark page (lightness floor 0.68). In 13 real themes the dark accent is at the median only 0.12 lighter than the light one, and four use the same colour in both modes.</li>
-          <li><b>Page and card:</b> near white in light mode, near black in dark mode, with a faint tint of your hue. The five tint styles the earlier prototype offered differed by at most 0.025 (barely visible), so they are no longer a choice. The dark page sits at lightness 0.23, the median of the 13 real themes (their range is 0.15 to 0.33).</li>
+          <li><b>Page and card:</b> near white in light mode, near black in dark mode, with a faint tint of your hue. The five tint styles the earlier prototype offered differed by at most 0.025 (barely visible), so they are not a choice. The dark page starts at lightness 0.23, the median of the 13 real themes (their range is 0.15 to 0.33), and the Dark mode depth slider takes it down to 0.16.</li>
           <li><b>One method:</b> hand-written rules in OKLCH, which came closest to the real themes (mean distance 0.041 against 0.067 for Material 3 and 0.064 for Ant Design). The comparison is on the research page.</li>
         </ul></details>
     </div>
@@ -265,20 +297,47 @@ const presetText = (p) => `${p.name} [${p.id}]\n  light: primary ${p.light.prima
 
 // ---------- One colour (the simplified tab) ----------
 // Everything except the brand colour is decided: see "What is decided for you".
-function derive(primary) {
-  const { L, C, h } = toOklch(primary), Ld = Math.max(L, 0.68), bgL = 0.23, cardL = bgL + 0.05;
+function derive(primary, depth = lab.depth / 100) {
+  const { L, C, h } = toOklch(primary), Ld = Math.max(L, 0.68), bgL = 0.23 - depth * 0.07, cardL = bgL + 0.05;
   return { light: { primary, background: oklch2hex(0.96, 0.006, h), card: "#ffffff" }, dark: { primary: oklch2hex(Ld, C, h), background: oklch2hex(bgL, 0.01, h), card: oklch2hex(cardL, 0.012, h) } };
 }
 const KEYS = [["light", "primary"], ["light", "background"], ["light", "card"], ["dark", "primary"], ["dark", "background"], ["dark", "card"]];
 const KEYNAME = { primary_light: ["light", "primary"], background_light: ["light", "background"], card_light: ["light", "card"], primary_dark: ["dark", "primary"], background_dark: ["dark", "background"], card_dark: ["dark", "card"] };
 const NAMED = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Pink", "#db2777"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
-const lab = { brand: "#2563eb", edits: {} };
+const lab = { brand: "#2563eb", L: 0, C: 0, h: 0, depth: 0, edits: {} };
 function current() { const g = derive(lab.brand), r = { light: { ...g.light }, dark: { ...g.dark } }; for (const [k, v] of Object.entries(lab.edits)) { const [m, s] = KEYNAME[k]; r[m][s] = v } return r }
 function renderPick() {
-  const custom = !NAMED.some(([, h]) => h === lab.brand);
-  $("pickrow").innerHTML = `<div class="cc custom" aria-pressed="${custom}"><span class="nm2"><i style="background:${lab.brand}"></i>Your colour</span><div class="row"><input type="color" id="pickc" value="${lab.brand}" aria-label="Brand colour picker"><input type="text" id="hexin" value="${lab.brand}" maxlength="7" spellcheck="false" aria-label="Brand colour as hex"></div></div>` +
-    NAMED.map(([n, h]) => `<button type="button" class="cc" data-name="${h}" aria-pressed="${lab.brand === h}"><span class="nm2"><i style="background:${h}"></i>${n}</span>${tiles(derive(h), "micro")}<span class="hx">${h}</span></button>`).join("");
+  $("pickrow").innerHTML = NAMED.map(([n, h]) => `<button type="button" class="cc" data-name="${h}" aria-pressed="${lab.brand === h}"><span class="nm2"><i style="background:${h}"></i>${n}</span>${tiles(derive(h), "micro")}<span class="hx">${h}</span></button>`).join("");
 }
+// ---------- the palette: lightness (up) and vividness (right) at the chosen hue, in OKLCH ----------
+const PL = { Lmin: 0.2, Lmax: 0.97, Cmax: 0.32 };
+const cmaxCache = new Map();
+function planeCmax(h) { const k = Math.round(h * 2) / 2; if (!cmaxCache.has(k)) { let m = 0; for (let L = PL.Lmin; L <= PL.Lmax; L += 0.01) m = Math.max(m, maxChroma(L, k)); cmaxCache.set(k, Math.min(0.37, Math.max(0.1, m * 1.04))) } return cmaxCache.get(k) }
+let planeDrawn = null;
+function drawPlane() {
+  const cv = $("planeCv"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, h = Math.round(lab.h * 2) / 2;
+  if (planeDrawn === h) return; planeDrawn = h;
+  const img = ctx.createImageData(W, H), dark = getComputedStyle(document.documentElement).getPropertyValue("--chip") || "#e9ebef";
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const L = PL.Lmax - (y / (H - 1)) * (PL.Lmax - PL.Lmin), C = (x / (W - 1)) * planeCmax(h), v = fromOklch(L, C, h), i = (y * W + x) * 4;
+    if (inGamut(v)) { const hx = rgb2hex(v), r = rgb(hx); img.data[i] = r[0]; img.data[i + 1] = r[1]; img.data[i + 2] = r[2]; img.data[i + 3] = 255 } else { img.data[i + 3] = 0 }
+  }
+  ctx.clearRect(0, 0, W, H); ctx.putImageData(img, 0, 0);
+}
+function renderMix() {
+  drawPlane();
+  const dot = $("planeDot"), cl = Math.min(PL.Lmax, Math.max(PL.Lmin, lab.L)), cc = Math.min(planeCmax(lab.h), Math.max(0, Math.min(lab.C, maxChroma(lab.L, lab.h))));
+  dot.style.left = (cc / planeCmax(lab.h)) * 100 + "%"; dot.style.top = ((PL.Lmax - cl) / (PL.Lmax - PL.Lmin)) * 100 + "%"; dot.style.background = lab.brand;
+  $("hue").value = Math.round(lab.h);
+  $("hueTrack").style.background = `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, i) => oklch2hex(lab.L, Math.min(lab.C, 0.2), i * 30)).join(",")})`;
+  $("bigHex").textContent = lab.brand; $("pickc").value = lab.brand;
+  if (document.activeElement !== $("hexin")) { $("hexin").value = lab.brand; $("hexin").setAttribute("aria-invalid", "false") }
+  const eff = Math.min(lab.C, maxChroma(lab.L, lab.h));
+  $("oklchHint").textContent = `Hue ${Math.round(lab.h)}°, lightness ${lab.L.toFixed(2)}, vividness ${eff.toFixed(2)}. Yellow, green and cyan cannot be as vivid as blue or purple at the same lightness, so their palette is narrower.`;
+  $("plane").setAttribute("aria-valuetext", `lightness ${lab.L.toFixed(2)}, vividness ${eff.toFixed(2)}`);
+}
+function setLCh(L, C, h) { lab.L = L; lab.C = C; lab.h = h; lab.brand = oklch2hex(L, C, h); lab.edits = {}; refresh() }
+function refresh() { renderPick(); renderResult(); renderMix() }
 function renderResult() {
   const r = current();
   $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark);
@@ -293,8 +352,8 @@ function renderResult() {
   const cell = (v) => `<td class="num ${v >= 4.5 ? "good" : "poor"}">${v.toFixed(2)} ${v >= 4.5 ? "✓" : "✗"}</td>`;
   $("report").innerHTML = `<table class="rep"><thead><tr><th>Check (needs 4.5)</th><th>Light</th><th>Dark</th></tr></thead><tbody><tr><td>Text on the page</td>${cell(L.text)}${cell(D.text)}</tr><tr><td>Text on the card</td>${cell(L.card)}${cell(D.card)}</tr><tr><td>Button text on the primary</td>${cell(L.btn)}${cell(D.btn)}</tr><tr><td>Link text on the card, after the site adjusts it</td>${cell(L.link)}${cell(D.link)}</tr><tr><td>Primary as it is, on the card (information)</td><td class="num">${L.raw.toFixed(2)}</td><td class="num">${D.raw.toFixed(2)}</td></tr></tbody></table>`;
 }
-const setBrand = (hex) => { lab.brand = hex.toLowerCase(); lab.edits = {}; renderPick(); renderResult() };
-function renderLab() { renderPick(); renderResult() }
+const setBrand = (hex) => { const o = toOklch(hex); lab.brand = hex.toLowerCase(); lab.L = o.L; lab.C = o.C; lab.h = o.h; lab.edits = {}; refresh() };
+function renderLab() { refresh() }
 
 // ---------- events ----------
 document.addEventListener("click", (e) => {
@@ -312,9 +371,20 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("input", (e) => { const i = e.target;
   if (i.id === "pickc") setBrand(i.value);
-  else if (i.id === "hexin") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.brand = v.toLowerCase(); lab.edits = {}; const keep = i.selectionStart; const pr = $("pickrow"); const hold = i.value; renderPick(); renderResult(); const n = $("hexin"); n.value = hold; n.focus(); n.setSelectionRange(keep, keep) } }
-  else if (i.dataset && i.dataset.key) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.edits[i.dataset.key] = v.toLowerCase(); const r = current(), [m, s] = KEYNAME[i.dataset.key]; i.closest(".cell").classList.add("edited"); i.previousElementSibling.style.background = r[m][s]; $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark); $("resetEdits").hidden = false } } });
+  else if (i.id === "hexin") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) setBrand(v) }
+  else if (i.id === "hue") setLCh(lab.L, lab.C, +i.value)
+  else if (i.id === "depth") { lab.depth = +i.value; lab.edits = {}; renderPick(); renderResult() }
+  else if (i.dataset && i.dataset.key) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { lab.edits[i.dataset.key] = v.toLowerCase(); const r = current(), [m, s2] = KEYNAME[i.dataset.key]; i.closest(".cell").classList.add("edited"); i.previousElementSibling.style.background = r[m][s2]; $("resTiles").innerHTML = tile("light", r.light) + tile("dark", r.dark); $("resetEdits").hidden = false } } });
+// the palette: pointer and keyboard
+const planePoint = (e) => { const r = $("plane").getBoundingClientRect(), x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)); return { L: PL.Lmax - y * (PL.Lmax - PL.Lmin), C: x * planeCmax(lab.h) } };
+let dragging = false;
+$("plane").addEventListener("pointerdown", (e) => { dragging = true; $("plane").setPointerCapture(e.pointerId); $("plane").focus(); const p = planePoint(e); setLCh(p.L, p.C, lab.h) });
+$("plane").addEventListener("pointermove", (e) => { if (dragging) { const p = planePoint(e); setLCh(p.L, p.C, lab.h) } });
+const stop = () => { dragging = false }; $("plane").addEventListener("pointerup", stop); $("plane").addEventListener("pointercancel", stop);
+$("plane").addEventListener("keydown", (e) => { const k = e.key, big = e.shiftKey ? 5 : 1; let L = lab.L, C = Math.min(lab.C, maxChroma(lab.L, lab.h));
+  if (k === "ArrowUp") L += 0.01 * big; else if (k === "ArrowDown") L -= 0.01 * big; else if (k === "ArrowRight") C += 0.005 * big; else if (k === "ArrowLeft") C -= 0.005 * big; else return;
+  e.preventDefault(); setLCh(Math.min(PL.Lmax, Math.max(PL.Lmin, L)), Math.min(planeCmax(lab.h), Math.max(0, C)), lab.h) });
 $("count").textContent = PRESETS.length;
-renderLab(); renderPresets();
+setBrand(lab.brand); renderPresets();
 
 </script>

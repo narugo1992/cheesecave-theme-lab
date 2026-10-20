@@ -8,22 +8,24 @@ A prototype for the Theme page of the CheeseCave admin: pick a ready-made light 
 
 Nothing here changes the product.
 
+**The palette** is a lightness (up) and vividness (right) plane in OKLCH at the chosen hue, with a hue strip under it; drag it, or use the arrow keys (Shift for bigger steps). The grey part is colours the screen cannot show at that hue, which is why yellow, green and cyan have a narrower palette than blue or purple.
+
 ## What the picker decides for you
 
-Only the brand colour is an input. The rest is fixed, from measurements on 13 real themes whose files were read:
+The inputs are the brand colour (thirteen colour cards, a colour palette to mix your own, or a hex field) and one slider, **Dark mode depth** (soft dark to deep dark). The rest is fixed, from measurements on 13 real themes whose files were read:
 
 | Decision | Choice | Why |
 |---|---|---|
 | Light primary | your colour, unchanged | it is the brand |
 | Dark primary | same hue and vividness, lightness at least 0.68 | real dark accents are 0.12 lighter at the median, and four themes use one colour in both modes |
-| Page and card | near white or near black with a faint tint of your hue; dark page at lightness 0.23 | median of the 13 real themes; the five tint styles of the first prototype differed by at most 0.025 (barely visible), so they are not a choice any more |
+| Page and card | near white or near black with a faint tint of your hue; the dark page starts at lightness 0.23 (soft dark) and goes down to 0.16 (deep dark) with the slider | 0.23 is the median of the 13 real themes (range 0.15 to 0.33); the five tint styles of the first prototype differed by at most 0.025 (barely visible), so they are not a choice any more |
 | Method | rules in OKLCH | mean distance to the real themes 0.041, against 0.067 (Material 3) and 0.064 (Ant Design) |
 
 The rules were fitted on those 13 themes, so that score is in-sample. A leave-one-out check of the main fitted parameter gave the same value every time (0.66) and a held-out error of 0.069 against 0.073 in-sample.
 
 ## Files
 
-- `index.html`: the picker (about 53 KB, no dependency apart from the web font, which falls back to system fonts offline).
+- `index.html`: the picker (about 60 KB, no dependency apart from the web font, which falls back to system fonts offline).
 - `research.html`: the research version (inlines two colour libraries, see below).
 - `data/verified-themes.json`: the 13 themes whose colours were read from their own files or palette pages, with source URLs.
 - `analysis/`: the scripts behind every number (`final-eval.mjs`, `loo.mjs`, `tune*.mjs`, `effect.mjs`, `stats-check.mjs`, `check.mjs`) and the 58 presets with their provenance (`presets.mjs`). `algos.mjs` needs the two libraries: `npm i @material/material-color-utilities@0.3.0 @ant-design/colors@7.2.0 esbuild`, then bundle `libs-entry.js` as an IIFE to `libs/bundle/libs.js`.
