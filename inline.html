@@ -1,0 +1,396 @@
+<title>Site Colour Picker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: two tabs. Presets is a swatch book of cards, each with the light and the dark tile of the admin Theme page. Lab is a control column and a result column: inputs on the left, the derived six colours and tiles on the right, then a comparison of methods, a hue sweep and a check against real themes. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --ink: #16181d; --muted: #5a616d; --line: #dde0e6; --chip: #e9ebef; --pick: #16181d; --pick-ink: #ffffff; --warn: #8a5a00; --ok: #1d6b3a; --bad: #a3262a;
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #101216; --surface: #181b21; --ink: #eceef2; --muted: #9aa1ad; --line: #2a2e37; --chip: #232731; --pick: #eceef2; --pick-ink: #101216; --warn: #e0b34a; --ok: #6cc38a; --bad: #f08a8c; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; margin: 0; padding-block: 28px 140px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.wrap { max-width: 1240px; margin: 0 auto }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; text-wrap: balance }
+h2.sec { font-size: 17px; font-weight: 600; margin: 34px 0 4px }
+.lede { color: var(--muted); max-width: 74ch; margin: 0 0 18px }
+.small { color: var(--muted); font-size: 13px; margin: 0 0 12px; max-width: 80ch }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px }
+.tab { font: inherit; font-weight: 500; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 14px; cursor: pointer; margin-bottom: -1px }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink) }
+.tab:focus-visible, .chip:focus-visible, .pick:focus-visible, .ghost:focus-visible, .seg button:focus-visible, .nm:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px }
+.chip { font: inherit; font-size: 13px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 6px 13px; cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink) }
+.chip .n { font-family: var(--mono); font-size: 11px; opacity: .7; margin-left: 6px }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 470px), 1fr)); gap: 18px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.card[data-picked="true"] { border-color: var(--pick); box-shadow: 0 0 0 1px var(--pick) }
+.head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between }
+.head h3 { font-size: 16px; font-weight: 600; margin: 0 }
+.fam { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px }
+.note { color: var(--muted); font-size: 13px; margin: 2px 0 0; max-width: 48ch }
+.prov { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--muted); margin-top: 6px }
+.prov a { color: inherit }
+.pick, .ghost, .nm, .seg button { font: inherit; cursor: pointer }
+.pick { flex: none; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 6px 12px }
+.pick[aria-pressed="true"] { background: var(--pick); color: var(--pick-ink); border-color: var(--pick) }
+.ghost { font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 9px }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.tile { padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--t-bg); color: var(--t-text); min-width: 0 }
+.tile .mode { display: block; font-size: 11px; font-weight: 600; margin-bottom: 9px }
+.tile .pc { padding: 14px; background: var(--t-card); color: var(--t-card-text); border: 1px solid var(--t-border); border-radius: 9px }
+.tile .eyebrow { margin: 0; color: var(--t-link); font-size: 9px; font-weight: 700; letter-spacing: .12em }
+.tile h4 { font-size: 16px; line-height: 1.25; margin: 8px 0 6px; font-weight: 600 }
+.tile p.body { margin: 0; opacity: .75; font-size: 12px; line-height: 1.55 }
+.tile .lnk { display: block; color: var(--t-link); font-size: 12px; margin: 11px 0 }
+.tile .btn { display: inline-block; color: var(--t-btn-text); background: var(--t-primary); padding: 7px 11px; border-radius: 7px; font-size: 12px }
+.tiles.mini { gap: 6px } .mini .tile { padding: 7px } .mini .tile .mode { font-size: 9px; margin-bottom: 5px } .mini .tile .pc { padding: 8px } .mini .tile h4 { font-size: 11px; margin: 4px 0 } .mini .tile .eyebrow, .mini .tile p.body, .mini .tile .lnk { display: none } .mini .tile .btn { font-size: 10px; padding: 4px 7px }
+.tiles.micro { gap: 4px } .micro .tile { padding: 5px } .micro .tile .mode, .micro .tile h4, .micro .tile .eyebrow, .micro .tile p.body, .micro .tile .lnk { display: none } .micro .tile .pc { padding: 5px } .micro .tile .btn { display: block; text-align: center; font-size: 10px; padding: 8px 2px }
+.hex { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--muted) }
+.hex div { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.hex span { display: flex; align-items: center; gap: 6px }
+.sw { width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); flex: none }
+.foot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap }
+.warn { font-size: 12px; color: var(--warn) }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.tray-in { max-width: 1240px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap }
+.picked { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0 }
+.tag { display: inline-flex; gap: 6px; align-items: center; background: var(--chip); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12.5px }
+.tag button { font: inherit; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-radius: 999px; padding: 0 6px; font-size: 14px }
+.none { color: var(--muted); flex: 1 }
+.primary { font: inherit; font-weight: 500; background: var(--pick); color: var(--pick-ink); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer }
+.primary:disabled { opacity: .4; cursor: default }
+.out { width: 100%; max-width: 1240px; margin: 8px auto 0; font-family: var(--mono); font-size: 12px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; height: 150px; resize: vertical }
+.toast { font-size: 12.5px; color: var(--muted) }
+/* lab */
+.lab { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.panel label.t, .panel .t { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.panel input[type="color"] { width: 46px; height: 40px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer }
+.panel input[type="text"], .panel select { font: inherit; font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0 }
+.panel select { font-family: var(--font) }
+.panel input[type="text"].hexin { width: 110px }
+input[type="range"] { width: 100%; accent-color: var(--ink) }
+.hueTrack { height: 12px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--line) }
+.names { display: flex; flex-wrap: wrap; gap: 6px }
+.nm { font-size: 12px; color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 4px 10px 4px 6px; display: inline-flex; gap: 6px; align-items: center }
+.nm i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line) }
+.nm[aria-pressed="true"] { border-color: var(--ink) }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: var(--chip); border-radius: 9px; padding: 3px }
+.seg button { font-size: 12.5px; color: var(--ink); background: transparent; border: 0; border-radius: 7px; padding: 6px 10px }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 0 0 1px var(--line) }
+.seg button:disabled { opacity: .4; cursor: default }
+.styles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px }
+.styles button { font: inherit; font-size: 11px; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 5px 4px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; align-items: center }
+.styles button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.styles button:disabled { opacity: .4; cursor: default }
+.styles .pair { display: flex; width: 100%; height: 22px; border-radius: 5px; overflow: hidden; border: 1px solid var(--line) }
+.styles .pair b { flex: 1 }
+.hint { font-size: 12px; color: var(--muted); margin: 6px 0 0 }
+.res { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.six .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.six .cell span { font-size: 11px; color: var(--muted) }
+.six .cell .in { display: flex; gap: 6px; align-items: center }
+.six input[type="text"] { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px }
+.six input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.six .edited input { border-color: var(--ink) }
+.rep { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.rep th, .rep td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-weight: 400 }
+.rep th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em }
+.rep td.num { font-family: var(--mono); text-align: right }
+.good { color: var(--ok) } .poor { color: var(--bad) }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.cmp .col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.cmp h4 { margin: 0; font-size: 14px } .cmp p { margin: 0; color: var(--muted); font-size: 12.5px }
+.sweep { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+.sweep button { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 6px }
+.sweep button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.sweep .lab2 { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.chk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.slotrow { display: grid; grid-template-columns: 1.2fr 1fr 1fr 70px; gap: 8px; align-items: center; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--line) }
+.slotrow span.sw2 { display: flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 11.5px }
+.sw2 i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line); flex: none }
+.methods details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px }
+.methods summary { cursor: pointer; font-weight: 500 }
+.methods p { color: var(--muted); font-size: 13px; margin: 8px 0 0; max-width: 90ch }
+@media (max-width: 980px) { .lab { grid-template-columns: 1fr } .cmp, .chk { grid-template-columns: 1fr } }
+@media (max-width: 560px) { .tiles { grid-template-columns: 1fr } .hex { grid-template-columns: 1fr } .six { grid-template-columns: repeat(2, minmax(0, 1fr)) } .slotrow { grid-template-columns: 1fr 1fr 1fr } .slotrow .d { display: none } body { padding-bottom: 190px } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .12s } }
+
+/* the faux admin Theme page */
+.admin { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px }
+.admin h2 { margin: 0; font-size: 20px } .admin h3 { margin: 0; font-size: 15px }
+.between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px }
+.fcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.fcard h4 { margin: 0; font-size: 14px }
+.fld { display: flex; flex-direction: column; gap: 4px } .fld label { font-size: 12.5px; font-weight: 500 }
+.fld .ctl { display: flex; gap: 10px; align-items: center }
+.fld input[type="color"] { width: 44px; height: 38px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; flex: none }
+.fld input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100% }
+.fld input[type="text"][aria-invalid="true"], .hexrow input[type="text"][aria-invalid="true"] { border-color: var(--bad) }
+.primary { font: inherit; font-weight: 500; background: var(--pick); color: var(--pick-ink); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer }
+.primary:disabled { opacity: .4; cursor: default }
+.secondary { font: inherit; font-weight: 500; background: transparent; color: var(--ink); border: 1px solid var(--ink); border-radius: 8px; padding: 7px 13px; cursor: pointer }
+.primary:focus-visible, .secondary:focus-visible, .sw16:focus-visible, .ghost:focus-visible, .x:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.dirty { font-size: 12.5px; color: var(--warn) }
+/* the dialog */
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--surface); color: var(--ink); width: min(980px, calc(100vw - 24px)); max-height: calc(100vh - 24px); box-shadow: 0 24px 70px rgba(0,0,0,.35) }
+dialog::backdrop { background: rgba(8, 10, 14, .55) }
+dialog[open] { display: flex; flex-direction: column }
+.dh { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line) }
+.dh h2 { margin: 0; font-size: 17px } .dh .x { font: inherit; font-size: 20px; line-height: 1; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px }
+.db { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; padding: 18px; overflow: auto }
+.left { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.right { display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.sec { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px }
+.matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.sw16 { height: 38px; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; position: relative; display: flex; align-items: flex-end; padding: 5px 6px; font: inherit; font-size: 11px; font-weight: 500; text-align: left }
+.sw16[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink) }
+.sw16[aria-pressed="true"]::after { content: "✓"; position: absolute; top: 4px; right: 7px; font-size: 13px }
+.bars { display: flex; flex-direction: column; gap: 12px }
+.bar3 { display: grid; grid-template-columns: 82px minmax(0, 1fr) 56px; gap: 10px; align-items: center }
+.bar3 label { font-size: 13px; font-weight: 500 } .bar3 output { font-family: var(--mono); font-size: 12.5px; text-align: right }
+input[type="range"].track { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--track, var(--chip)); margin: 0; cursor: pointer }
+input[type="range"].track::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--cur, #888); border: 3px solid #fff; box-shadow: 0 0 0 1.5px #000, 0 1px 4px rgba(0,0,0,.4) }
+input[type="range"].track::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--cur, #888); border: 3px solid #fff; box-shadow: 0 0 0 1.5px #000 }
+input[type="range"].track:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px }
+.hexrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.hexrow input[type="text"] { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 112px }
+.hexrow .cur { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line) }
+.hexrow .ok { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 160px }
+.depthbar { border-top: 1px solid var(--line); padding-top: 14px }
+.depthbar .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px }
+.pvhead { font-size: 12px; color: var(--muted); margin-bottom: 6px }
+.pvhex { font-family: var(--mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px }
+.pvhex .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); margin-right: 4px }
+.df { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line); flex-wrap: wrap }
+.df .grp { display: flex; gap: 8px; align-items: center }
+.df .note { font-size: 12.5px; color: var(--muted); flex: 1; min-width: 200px }
+.df .note.warn { color: var(--warn) }
+.pv .tile { padding: 14px } .pv .tile .pc { padding: 18px } .pv .tile h4 { font-size: 19px }
+@media (max-width: 760px) { .cols2 { grid-template-columns: 1fr } .db { grid-template-columns: 1fr } dialog { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0 } .bar3 { grid-template-columns: 70px minmax(0, 1fr) 48px } }
+
+.qsbtn { font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.2) }
+.qsbtn:hover { background: #1d4fd0 } .qsbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.qsbtn[aria-expanded="true"] { background: #1e3a8a }
+.qpanel { border: 1px solid var(--line); border-radius: 12px; background: var(--bg) }
+.qph { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line) } .qph h3 { display: flex; gap: 8px; align-items: center; flex: none } .qph .note { flex: 1; font-size: 12.5px; color: var(--muted) } .qph .x { font: inherit; font-size: 20px; border: 0; background: transparent; color: var(--muted); cursor: pointer }
+.qpb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; padding: 14px; align-items: start }
+.qctl { display: flex; flex-direction: column; gap: 14px }
+@media (max-width: 760px) { .qpb { grid-template-columns: 1fr } }
+.foot2 { margin-top: 30px; color: var(--muted); font-size: 13px }
+</style>
+<div class="wrap">
+  <h1>Site colour picker</h1>
+  <p class="lede">A prototype of the colour setup on the admin Site &gt; Theme page. <b>Theme page</b> is a mock of that page: press <b>Quick setup…</b> to open the colour dialog, change things, then <b>Apply</b> to fill the six colour fields. <b>Presets</b> lists 58 ready-made light and dark sets. Every tile is drawn with the rules of the real Preview.</p>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="t-admin" aria-selected="true" aria-controls="tab-admin" type="button">Theme page</button>
+    <button class="tab" role="tab" id="t-presets" aria-selected="false" aria-controls="tab-presets" type="button">Presets</button>
+  </div>
+
+  <section id="tab-admin" role="tabpanel" aria-labelledby="t-admin">
+    <div class="admin">
+      <div><h2>Theme</h2><p class="small" style="margin:4px 0 0">Set the visitor site's default mode and colors for light and dark appearances.</p></div>
+      <div class="between"><h3>Colors</h3><button class="qsbtn" id="openQuick" type="button" aria-expanded="false" aria-controls="qpanel"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M12.2 6.2 11 5M3 21l9-9"/></svg>Quick setup</button></div>
+      <section class="qpanel" id="qpanel" hidden aria-labelledby="qptitle">
+  <div class="qph"><h3 id="qptitle"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M12.2 6.2 11 5M3 21l9-9"/></svg> Quick setup</h3><span class="note" id="mstatus"></span><button class="ghost" id="qrevert" type="button">Undo changes</button><button class="x" id="mclose" type="button" aria-label="Close quick setup">×</button></div>
+  <div class="qpb">
+    <div><span class="sec">Recommended colours</span><div class="matrix" id="matrix" role="group" aria-label="Recommended colours"></div></div>
+    <div class="qctl">
+      <div class="bars">
+        <div class="bar3"><label for="rh">Hue</label><input class="track" type="range" id="rh" min="0" max="359" step="1"><output id="oh" for="rh"></output></div>
+        <div class="bar3"><label for="rv">Vividness</label><input class="track" type="range" id="rv" min="0" max="100" step="1"><output id="ov" for="rv"></output></div>
+        <div class="bar3"><label for="rl">Lightness</label><input class="track" type="range" id="rl" min="20" max="97" step="1"><output id="ol" for="rl"></output></div>
+        <div class="bar3"><label for="rd">Dark depth</label><input class="track" type="range" id="rd" min="0" max="100" step="1"><output id="od" for="rd"></output></div>
+      </div>
+      <div class="hexrow"><span class="cur" id="cur"></span><input type="text" id="mhex" maxlength="7" spellcheck="false" aria-label="Colour as hex"><span class="ok" id="mhint"></span></div>
+    </div>
+  </div>
+</section>
+      <div><h3 style="margin-bottom:10px">Preview</h3><div class="tiles" id="pagePreview"></div></div>
+      <div class="cols2" id="fields"></div>
+            <div class="between"><span class="dirty" id="dirty" role="status"></span><span class="row" style="display:flex;gap:8px"><button class="ghost" id="restore" type="button" hidden>Restore</button><button class="primary" id="saveBtn" type="button" disabled>Save</button></span></div>
+    </div>
+  </section>
+
+  <section id="tab-presets" role="tabpanel" aria-labelledby="t-presets" hidden>
+    <div class="bar" id="bar" role="group" aria-label="Filter by family"></div>
+    <div class="grid" id="grid"></div>
+    <div class="none" id="empty" hidden>Nothing picked yet. Press Pick on a card.</div>
+  </section>
+  <p class="foot2">Earlier versions: <a href="previous.html">palette and slider page</a> · <a href="research.html">research version with the three methods</a>. Design issue and data: <a href="https://github.com/cheesecave/cheesecave-admin/issues/23" target="_blank" rel="noopener noreferrer">cheesecave-admin#23</a>.</p>
+</div>
+
+
+
+<div class="tray" id="tray" hidden>
+  <div class="tray-in">
+    <b id="tlabel">Picked</b><div class="picked" id="picked"></div><span class="toast" id="toast" role="status"></span>
+    <button class="ghost" id="clear" type="button">Clear</button><button class="primary" id="copy" type="button">Copy picks</button>
+  </div>
+  <div class="tray-in"><textarea class="out" id="out" aria-label="Copied text" readonly hidden></textarea></div>
+</div>
+<script>
+const PRESETS = [{"id":"hub-yellow","name":"Hub Yellow","family":"Hub & product","note":"After Hugging Face: a warm yellow on white, and its deep navy dark page.","light":{"primary":"#f2b300","background":"#ffffff","card":"#f8f9fb"},"dark":{"primary":"#ffd21e","background":"#0b0f19","card":"#101623"},"prov":"partial"},{"id":"github-primer","name":"GitHub Primer","family":"Hub & product","note":"GitHub's own light and dark: link blue on white, then #0d1117.","light":{"primary":"#0969da","background":"#ffffff","card":"#f6f8fa"},"dark":{"primary":"#58a6ff","background":"#0d1117","card":"#161b22"},"prov":"partial"},{"id":"gitlab-orange","name":"GitLab Orange","family":"Hub & product","note":"A forge-style orange with neutral grey surfaces.","light":{"primary":"#e24329","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#fc6d26","background":"#1f1e24","card":"#2b2a33"},"prov":"memory"},{"id":"kaggle-sky","name":"Kaggle Sky","family":"Hub & product","note":"Data-platform cyan-blue on clean white.","light":{"primary":"#0f9bd7","background":"#ffffff","card":"#f5f8fa"},"dark":{"primary":"#20beff","background":"#0f1419","card":"#181e26"},"prov":"memory"},{"id":"docs-green","name":"Docs Green","family":"Hub & product","note":"The green of documentation sites: calm, long-form friendly.","light":{"primary":"#2e8555","background":"#ffffff","card":"#f5f6f7"},"dark":{"primary":"#25c2a0","background":"#1b1b1d","card":"#242526"},"prov":"memory"},{"id":"material-indigo","name":"Material Indigo","family":"Hub & product","note":"Material's indigo with a slate dark page.","light":{"primary":"#3f51b5","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#9fa8da","background":"#1e2129","card":"#282c37"},"prov":"memory"},{"id":"cloud-blue","name":"Cloud Blue","family":"Cool & clear","note":"The safe, trustworthy blue on a cool slate dark.","light":{"primary":"#2563eb","background":"#f8fafc","card":"#ffffff"},"dark":{"primary":"#60a5fa","background":"#0f172a","card":"#1e293b"},"prov":"original"},{"id":"indigo","name":"Indigo","family":"Cool & clear","note":"Deeper and a little more distinctive than plain blue.","light":{"primary":"#4f46e5","background":"#f8f9fc","card":"#ffffff"},"dark":{"primary":"#818cf8","background":"#111827","card":"#1f2937"},"prov":"original"},{"id":"violet","name":"Violet","family":"Cool & clear","note":"A model-lab purple with a tinted dark page.","light":{"primary":"#7c3aed","background":"#faf8ff","card":"#ffffff"},"dark":{"primary":"#a78bfa","background":"#17121f","card":"#211a2e"},"prov":"original"},{"id":"sky","name":"Sky","family":"Cool & clear","note":"Light, open, friendly.","light":{"primary":"#0284c7","background":"#f4f9fc","card":"#ffffff"},"dark":{"primary":"#38bdf8","background":"#0b1520","card":"#112030"},"prov":"original"},{"id":"cyan-hub","name":"Cyan Hub","family":"Cool & clear","note":"Cyan on the navy-black dark page of a model hub.","light":{"primary":"#0891b2","background":"#f3f7f9","card":"#ffffff"},"dark":{"primary":"#22d3ee","background":"#0b0f19","card":"#101623"},"prov":"original"},{"id":"navy","name":"Navy","family":"Cool & clear","note":"Formal and institutional.","light":{"primary":"#1d4ed8","background":"#f1f5f9","card":"#ffffff"},"dark":{"primary":"#93c5fd","background":"#0b1220","card":"#121b2e"},"prov":"original"},{"id":"emerald","name":"Emerald","family":"Warm & natural","note":"Fresh green, nature and growth.","light":{"primary":"#059669","background":"#f3f8f5","card":"#ffffff"},"dark":{"primary":"#34d399","background":"#0e1512","card":"#16211b"},"prov":"original"},{"id":"sage","name":"Sage","family":"Warm & natural","note":"A muted grey-green that stays out of the way.","light":{"primary":"#52796f","background":"#f4f7f4","card":"#ffffff"},"dark":{"primary":"#84a98c","background":"#1a221f","card":"#243029"},"prov":"original"},{"id":"mint","name":"Mint","family":"Warm & natural","note":"Cool green-teal with a clinical clean feel.","light":{"primary":"#0f766e","background":"#f0f9f7","card":"#ffffff"},"dark":{"primary":"#5eead4","background":"#0b1a18","card":"#112321"},"prov":"original"},{"id":"amber","name":"Amber","family":"Warm & natural","note":"Honey amber on warm white and a brown-black dark page.","light":{"primary":"#d97706","background":"#fffaf0","card":"#ffffff"},"dark":{"primary":"#fbbf24","background":"#17120a","card":"#221a0d"},"prov":"original"},{"id":"terracotta","name":"Terracotta","family":"Warm & natural","note":"Burnt orange with warm stone neutrals.","light":{"primary":"#c2410c","background":"#fbf7f3","card":"#ffffff"},"dark":{"primary":"#fb923c","background":"#1c1917","card":"#292524"},"prov":"original"},{"id":"coral","name":"Coral","family":"Warm & natural","note":"A lively red-orange; friendly, consumer-facing.","light":{"primary":"#e5533d","background":"#fff8f5","card":"#ffffff"},"dark":{"primary":"#ff7b63","background":"#1c1210","card":"#281a16"},"prov":"original"},{"id":"rose","name":"Rose","family":"Warm & natural","note":"Strong crimson-pink; makes buttons obvious.","light":{"primary":"#e11d48","background":"#fff7f8","card":"#ffffff"},"dark":{"primary":"#fb7185","background":"#1a0f12","card":"#261519"},"prov":"original"},{"id":"berry","name":"Berry","family":"Warm & natural","note":"Magenta-berry for a creative community.","light":{"primary":"#be185d","background":"#fdf4f9","card":"#ffffff"},"dark":{"primary":"#f472b6","background":"#1f1020","card":"#2b172c"},"prov":"original"},{"id":"copper","name":"Copper","family":"Warm & natural","note":"A brown-gold with paper-like warmth.","light":{"primary":"#a35a12","background":"#faf6f0","card":"#ffffff"},"dark":{"primary":"#e0a060","background":"#1d1814","card":"#28211b"},"prov":"original"},{"id":"olive-gold","name":"Olive Gold (current)","family":"Warm & natural","note":"The theme the site ships with today, for reference.","light":{"primary":"#94621f","background":"#f7f4eb","card":"#fffdf7"},"dark":{"primary":"#e6b85c","background":"#1c211d","card":"#282e27"},"prov":"original"},{"id":"catppuccin-mauve","name":"Catppuccin Mauve","family":"Editor classics","note":"Catppuccin Latte and Mocha, mauve accent.","light":{"primary":"#8839ef","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#cba6f7","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-blue","name":"Catppuccin Blue","family":"Editor classics","note":"Catppuccin Latte and Mocha, blue accent.","light":{"primary":"#1e66f5","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#89b4fa","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"catppuccin-green","name":"Catppuccin Green","family":"Editor classics","note":"Catppuccin Latte and Mocha, green accent.","light":{"primary":"#40a02b","background":"#eff1f5","card":"#ffffff"},"dark":{"primary":"#a6e3a1","background":"#1e1e2e","card":"#313244"},"prov":"partial"},{"id":"rosepine-iris","name":"Rosé Pine Iris","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, iris accent.","light":{"primary":"#907aa9","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#c4a7e7","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"rosepine-rose","name":"Rosé Pine Rose","family":"Editor classics","note":"Rosé Pine Dawn and Rosé Pine, rose accent.","light":{"primary":"#b4637a","background":"#faf4ed","card":"#fffaf3"},"dark":{"primary":"#ebbcba","background":"#191724","card":"#1f1d2e"},"prov":"memory"},{"id":"nord","name":"Nord","family":"Editor classics","note":"Nord's frost blue on snow white and polar night.","light":{"primary":"#5e81ac","background":"#eceff4","card":"#ffffff"},"dark":{"primary":"#88c0d0","background":"#2e3440","card":"#3b4252"},"prov":"memory"},{"id":"gruvbox-orange","name":"Gruvbox Orange","family":"Editor classics","note":"Gruvbox's retro paper and dark, orange accent.","light":{"primary":"#af3a03","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#fe8019","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"gruvbox-green","name":"Gruvbox Green","family":"Editor classics","note":"Gruvbox's retro paper and dark, green accent.","light":{"primary":"#79740e","background":"#fbf1c7","card":"#f2e5bc"},"dark":{"primary":"#b8bb26","background":"#282828","card":"#3c3836"},"prov":"memory"},{"id":"tokyo-night","name":"Tokyo Night","family":"Editor classics","note":"Tokyo Night Day and Night, blue accent.","light":{"primary":"#2e7de9","background":"#e1e2e7","card":"#f2f3f7"},"dark":{"primary":"#7aa2f7","background":"#1a1b26","card":"#24283b"},"prov":"memory"},{"id":"dracula","name":"Dracula","family":"Editor classics","note":"Dracula's purple with the Alucard light page.","light":{"primary":"#644ac9","background":"#fffbeb","card":"#ffffff"},"dark":{"primary":"#bd93f9","background":"#282a36","card":"#343746"},"prov":"memory"},{"id":"everforest","name":"Everforest","family":"Editor classics","note":"A soft green on cream, and a green-grey dark.","light":{"primary":"#8da101","background":"#fdf6e3","card":"#f4f0d9"},"dark":{"primary":"#a7c080","background":"#2d353b","card":"#343f44"},"prov":"memory"},{"id":"kanagawa","name":"Kanagawa","family":"Editor classics","note":"Kanagawa Lotus and Wave: Japanese-print muted blue.","light":{"primary":"#4d699b","background":"#f2ecbc","card":"#f9f5d7"},"dark":{"primary":"#7e9cd8","background":"#1f1f28","card":"#2a2a37"},"prov":"memory"},{"id":"ayu","name":"Ayu","family":"Editor classics","note":"Ayu Light and Mirage: a bright orange to gold.","light":{"primary":"#ff9940","background":"#fcfcfc","card":"#ffffff"},"dark":{"primary":"#ffcc66","background":"#1f2430","card":"#242b38"},"prov":"memory"},{"id":"darcula-orange","name":"Darcula Orange","family":"Editor classics","note":"JetBrains Darcula dark (#2b2b2b editor, #3c3f41 panels, keyword orange). The light side is my pairing, not an official Darcula light.","light":{"primary":"#a8570f","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#cc7832","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"darcula-blue","name":"Darcula Blue","family":"Editor classics","note":"JetBrains Darcula dark with its steel-blue number colour (#6897bb). The light side is my pairing.","light":{"primary":"#2f6ea8","background":"#f2f2f2","card":"#ffffff"},"dark":{"primary":"#6897bb","background":"#2b2b2b","card":"#3c3f41"},"prov":"partial"},{"id":"monokai-pink","name":"Monokai Pink","family":"Editor classics","note":"Monokai's #272822 with its pink; the light side is my pairing.","light":{"primary":"#d6155e","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#f92672","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"monokai-green","name":"Monokai Green","family":"Editor classics","note":"Monokai's #272822 with its green; the light side is my pairing.","light":{"primary":"#5f8f12","background":"#f8f8f2","card":"#ffffff"},"dark":{"primary":"#a6e22e","background":"#272822","card":"#383830"},"prov":"partial"},{"id":"palenight","name":"Palenight","family":"Editor classics","note":"Material Palenight dark (#292d3e, purple #c792ea); the light side is a Material-style pairing.","light":{"primary":"#7e57c2","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#c792ea","background":"#292d3e","card":"#34374b"},"prov":"partial"},{"id":"night-owl","name":"Night Owl","family":"Editor classics","note":"Night Owl's deep navy and Light Owl; colours from memory, not checked against the source.","light":{"primary":"#4876d6","background":"#fbfbfb","card":"#ffffff"},"dark":{"primary":"#82aaff","background":"#011627","card":"#0b2942"},"prov":"memory"},{"id":"solarized","name":"Solarized","family":"Editor classics","note":"Ethan Schoonover's palette: base3 and base2 for light, base03 and base02 for dark, with the blue swatch as the accent.","light":{"primary":"#268bd2","background":"#eee8d5","card":"#fdf6e3"},"dark":{"primary":"#268bd2","background":"#002b36","card":"#073642"},"prov":"official","source":["Official palette","https://ethanschoonover.com/solarized/"],"market":"Solarized Theme for JetBrains: about 2.5M downloads"},{"id":"vitesse","name":"Vitesse","family":"Editor classics","note":"antfu's Vitesse: one green, deeper in light and lighter in dark. The source has no raised surface, so the page tone is my pairing.","light":{"primary":"#1c6b48","background":"#f5f5f3","card":"#ffffff"},"dark":{"primary":"#4d9375","background":"#0c0c0c","card":"#121212"},"prov":"official","source":["Official theme files","https://github.com/antfu/vscode-theme-vitesse"],"market":"119k installs on the VS Code Marketplace"},{"id":"min","name":"Min","family":"Editor classics","note":"Min Light and Min Dark: monochrome, no accent hue at all.","light":{"primary":"#757575","background":"#f6f6f6","card":"#ffffff"},"dark":{"primary":"#cccccc","background":"#1a1a1a","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/miguelsolorio/min-theme"],"market":"634k installs on the VS Code Marketplace"},{"id":"winter-is-coming","name":"Winter is Coming","family":"Editor classics","note":"A cold blue with plain greys. The dark source has one surface only, so its card is my pairing.","light":{"primary":"#236ebf","background":"#f3f3f3","card":"#ffffff"},"dark":{"primary":"#219fd5","background":"#282822","card":"#32322b"},"prov":"official","source":["Official theme files","https://github.com/johnpapa/vscode-winteriscoming"],"market":"3.76M installs on the VS Code Marketplace"},{"id":"noctis","name":"Noctis","family":"Editor classics","note":"Noctis Lux (warm cream) and Noctis (deep teal): one teal-cyan accent.","light":{"primary":"#0099ad","background":"#f9f1e1","card":"#fef8ec"},"dark":{"primary":"#40d4e7","background":"#041d20","card":"#052529"},"prov":"official","source":["Official theme files","https://github.com/liviuschera/noctis"],"market":"1.40M installs on the VS Code Marketplace"},{"id":"bluloco","name":"Bluloco","family":"Editor classics","note":"Bluloco Light and Dark: a sky blue and a brighter royal blue.","light":{"primary":"#0099e1","background":"#e8e8e8","card":"#f9f9f9"},"dark":{"primary":"#3691ff","background":"#22252a","card":"#282c34"},"prov":"official","source":["Official theme files","https://github.com/uloco/theme-bluloco-light"],"market":"about 530k installs on the VS Code Marketplace"},{"id":"horizon","name":"Horizon","family":"Editor classics","note":"Horizon Bright and Horizon: a single pink-red. The source has one surface per mode; the card is my pairing.","light":{"primary":"#e84a72","background":"#fdf0ed","card":"#ffffff"},"dark":{"primary":"#e95378","background":"#1c1e26","card":"#262833"},"prov":"official","source":["Official theme files","https://github.com/jolaleye/horizon-theme-vscode"],"market":"about 163k installs (a fork; the original was removed)"},{"id":"flexoki","name":"Flexoki","family":"Editor classics","note":"Steph Ango's Flexoki: warm paper and black, with the cyan accent of the VS Code port.","light":{"primary":"#24837b","background":"#f2f0e5","card":"#fffcf0"},"dark":{"primary":"#3aa99f","background":"#100f0f","card":"#1c1b1a"},"prov":"official","source":["Official palette and VS Code port","https://stephango.com/flexoki"]},{"id":"vscode-modern","name":"VS Code Modern","family":"Editor classics","note":"VS Code's current built-in Light Modern and Dark Modern with their single blue.","light":{"primary":"#005fb8","background":"#f8f8f8","card":"#ffffff"},"dark":{"primary":"#0078d4","background":"#181818","card":"#1f1f1f"},"prov":"official","source":["Official theme files","https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes"]},{"id":"selenized","name":"Selenized","family":"Editor classics","note":"Jan Warchol's Selenized: a careful remake of Solarized with better contrast.","light":{"primary":"#0072d4","background":"#ece3cc","card":"#fbf3db"},"dark":{"primary":"#4695f7","background":"#103c48","card":"#184956"},"prov":"official","source":["Official palette","https://github.com/jan-warchol/selenized"]},{"id":"papercolor","name":"PaperColor","family":"Editor classics","note":"The PaperColor Vim theme: soft greys with a navy and a teal.","light":{"primary":"#005f87","background":"#e4e4e4","card":"#eeeeee"},"dark":{"primary":"#00afaf","background":"#1c1c1c","card":"#303030"},"prov":"official","source":["Official Vim theme","https://github.com/NLKNguyen/papercolor-theme"]},{"id":"one-zed","name":"One (Zed)","family":"Editor classics","note":"Zed's built-in One Light and One Dark, descended from Atom One.","light":{"primary":"#5c78e2","background":"#ebebec","card":"#fafafa"},"dark":{"primary":"#74ade8","background":"#282c33","card":"#2f343e"},"prov":"official","source":["Official theme file","https://github.com/zed-industries/zed/blob/main/assets/themes/one/one.json"],"market":"descended from Atom One; One Dark for JetBrains: about 11.8M downloads"},{"id":"adwaita","name":"Adwaita","family":"Editor classics","note":"GNOME's Adwaita: the same blue in both modes.","light":{"primary":"#3584e4","background":"#fafafa","card":"#ffffff"},"dark":{"primary":"#3584e4","background":"#1d1d1d","card":"#242424"},"prov":"official","source":["Official theme files","https://github.com/piousdeer/vscode-adwaita"],"market":"96k installs on the VS Code Marketplace"},{"id":"graphite","name":"Graphite","family":"Neutral","note":"Colourless grey; lets the content carry the colour.","light":{"primary":"#374151","background":"#f9fafb","card":"#ffffff"},"dark":{"primary":"#d1d5db","background":"#111111","card":"#1b1b1b"},"prov":"original"},{"id":"ink","name":"Ink","family":"Neutral","note":"Black and white, nothing else.","light":{"primary":"#111111","background":"#ffffff","card":"#fafafa"},"dark":{"primary":"#fafafa","background":"#09090b","card":"#18181b"},"prov":"original"},{"id":"paper","name":"Paper","family":"Neutral","note":"Sepia paper with a brown accent, for long reading.","light":{"primary":"#7a4a21","background":"#f4ecd8","card":"#fbf5e6"},"dark":{"primary":"#d9a066","background":"#1e1812","card":"#2a2118"},"prov":"original"},{"id":"high-contrast","name":"High Contrast","family":"Neutral","note":"Maximum contrast: pure white and pure black pages.","light":{"primary":"#0033cc","background":"#ffffff","card":"#ffffff"},"dark":{"primary":"#66b3ff","background":"#000000","card":"#0d0d0d"},"prov":"original"}];
+// ---------- colour maths (OKLab / OKLCH) ----------
+const rgb = (h) => h.match(/[a-f\d]{2}/gi).map((p) => parseInt(p, 16));
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+const toOklab = (hex) => { const [r, g, b] = rgb(hex).map((v) => lin(v / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s] };
+const toOklch = (hex) => { const [L, a, b] = toOklab(hex); let h = (Math.atan2(b, a) * 180) / Math.PI; if (h < 0) h += 360; return { L, C: Math.hypot(a, b), h } };
+const fromOklab = (L, a, b) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s] };
+const fromOklch = (L, C, h) => { const r = (h * Math.PI) / 180; return fromOklab(L, C * Math.cos(r), C * Math.sin(r)) };
+const inGamut = (v) => v.every((c) => c >= -0.0005 && c <= 1.0005);
+const rgb2hex = (v) => "#" + v.map((c) => Math.round(Math.min(1, Math.max(0, gam(Math.min(1, Math.max(0, c))))) * 255).toString(16).padStart(2, "0")).join("");
+const maxChroma = (L, h) => { let lo = 0, hi = 0.4; for (let i = 0; i < 28; i++) { const mid = (lo + hi) / 2; inGamut(fromOklch(L, mid, h)) ? (lo = mid) : (hi = mid) } return lo };
+const oklch2hex = (L, C, h) => rgb2hex(fromOklch(L, Math.min(C, maxChroma(L, h)), h));
+const dE = (a, b) => { const x = toOklab(a), y = toOklab(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) };
+// ---------- the site's own derivation (src/shared/site-theme.js: text, link, button text, border) ----------
+const mix = (c, t, w) => { const d = rgb(t); return "#" + rgb(c).map((ch, i) => Math.round(ch + (d[i] - ch) * w).toString(16).padStart(2, "0")).join("") };
+const lum = (h) => { const c = rgb(h).map((v) => lin(v / 255)); return c[0] * .2126 + c[1] * .7152 + c[2] * .0722 };
+const ratio = (a, b) => { const v = [lum(a), lum(b)].sort((x, y) => y - x); return (v[0] + .05) / (v[1] + .05) };
+const contrastText = (bg) => ratio(bg, "#ffffff") >= ratio(bg, "#000000") ? "#ffffff" : "#000000";
+const softText = (bg) => { const ink = "#2c332b", cream = "#eef0e7"; const p = ratio(bg, ink) >= ratio(bg, cream) ? ink : cream; return ratio(bg, p) >= 4.5 ? p : contrastText(bg) };
+const readableSoft = (color, bg) => { const t = softText(bg); for (let s = 0; s <= 20; s++) { const c = mix(color, t, s / 20); if (ratio(c, bg) >= 4.5) return c } return t };
+function palette({ primary, background, card }) { const cardText = softText(card); return { text: softText(background), cardText, btn: softText(primary), link: readableSoft(primary, card), border: mix(cardText, card, .82) } }
+// APCA (0.0.98G), shown as information only: WCAG 2 is the compliance test, APCA is a better guide in dark mode.
+const apcaY = (hex) => { const [r, g, b] = rgb(hex).map((v) => (v / 255) ** 2.4); const Y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b; return Y < 0.022 ? Y + (0.022 - Y) ** 1.414 : Y };
+function apca(txt, bg) { const t = apcaY(txt), b = apcaY(bg); if (Math.abs(b - t) < 0.0005) return 0; if (b > t) { const s = (b ** 0.56 - t ** 0.57) * 1.14; return s < 0.1 ? 0 : (s - 0.027) * 100 } const s = (b ** 0.65 - t ** 0.62) * 1.14; return s > -0.1 ? 0 : Math.abs((s + 0.027) * 100) }
+
+// ---------- shared view helpers ----------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function tile(mode, t) {
+  const p = palette(t);
+  const style = `--t-bg:${t.background};--t-card:${t.card};--t-text:${p.text};--t-card-text:${p.cardText};--t-primary:${t.primary};--t-btn-text:${p.btn};--t-link:${p.link};--t-border:${p.border}`;
+  return `<div class="tile" style="${style}"><span class="mode">${mode === "light" ? "Light mode" : "Dark mode"}</span><div class="pc"><p class="eyebrow">YOUR NEXT PROJECT</p><h4>A home for your ideas</h4><p class="body">Share models and datasets with your community.</p><span class="lnk">Browse repositories →</span><span class="btn">Create repository</span></div></div>`;
+}
+const tiles = (set, mini) => `<div class="tiles${mini ? " " + (mini === true ? "mini" : mini) : ""}">${tile("light", set.light)}${tile("dark", set.dark)}</div>`;
+const hexRows = (t) => ["primary", "background", "card"].map((k) => `<span><i class="sw" style="background:${t[k]}"></i>${t[k]} <small>${k}</small></span>`).join("");
+const toast = (m) => { $("toast").textContent = m; clearTimeout(toast.t); toast.t = setTimeout(() => { $("toast").textContent = "" }, 2200) };
+async function copyText(str, label) {
+  const out = $("out");
+  try { await navigator.clipboard.writeText(str); out.hidden = true; toast(label + " copied") }
+  catch (e) { out.hidden = false; out.value = str; out.focus(); out.select(); toast("Select and copy the text below") }
+}
+const validHex = (v) => /^#[0-9a-f]{6}$/i.test(v);
+
+// ---------- Presets tab ----------
+let family = "All", picks = new Set();
+try { picks = new Set(JSON.parse(localStorage.getItem("theme-picks") || "[]").filter((id) => PRESETS.some((p) => p.id === id))) } catch (e) {}
+const savePicks = () => { try { localStorage.setItem("theme-picks", JSON.stringify([...picks])) } catch (e) {} };
+const FAMILIES = ["All", ...new Set(PRESETS.map((p) => p.family))];
+const PROV = { partial: "Partly official: the dark side is checked against published colours, the rest is my pairing", memory: "From memory, not checked against a source", original: "Original design" };
+function provHtml(p) {
+  if (p.prov === "official") return `<span class="prov">Official values · <a href="${esc(p.source[1])}" target="_blank" rel="noopener noreferrer">${esc(p.source[0])}</a>${p.market ? " · " + esc(p.market) : ""}</span>`;
+  return `<span class="prov">${esc(PROV[p.prov])}</span>`;
+}
+function card(p) {
+  const weak = ["light", "dark"].filter((m) => ratio(p[m].primary, p[m].card) < 3);
+  const warn = weak.length ? `<span class="warn">Link text is darkened automatically in ${weak.join(" and ")} mode (the primary is pale on the card).</span>` : "<span></span>";
+  const on = picks.has(p.id);
+  return `<article class="card" data-id="${p.id}" data-picked="${on}"><div class="head"><div><p class="fam">${esc(p.family)}</p><h3>${esc(p.name)}</h3><p class="note">${esc(p.note)}</p>${provHtml(p)}</div><button class="pick" type="button" data-pick="${p.id}" aria-pressed="${on}">${on ? "✓ Picked" : "Pick"}</button></div>${tiles(p)}<div class="hex"><div>${hexRows(p.light)}</div><div>${hexRows(p.dark)}</div></div><div class="foot">${warn}<button class="ghost" type="button" data-copy="${p.id}">Copy 6 colours</button></div></article>`;
+}
+function renderPresets() {
+  const n = (f) => f === "All" ? PRESETS.length : f === "Official" ? PRESETS.filter((p) => p.prov === "official").length : PRESETS.filter((p) => p.family === f).length;
+  $("bar").innerHTML = [...FAMILIES, "Official"].map((f) => `<button class="chip" type="button" aria-pressed="${family === f}" data-f="${esc(f)}">${f === "Official" ? "Official values only" : esc(f)}<span class="n">${n(f)}</span></button>`).join("") + `<button class="chip" type="button" aria-pressed="${family === "Picked"}" data-f="Picked">Picked<span class="n">${picks.size}</span></button>`;
+  const list = family === "All" ? PRESETS : family === "Picked" ? PRESETS.filter((p) => picks.has(p.id)) : family === "Official" ? PRESETS.filter((p) => p.prov === "official") : PRESETS.filter((p) => p.family === family);
+  $("grid").innerHTML = list.map(card).join(""); $("empty").hidden = !(family === "Picked" && !list.length);
+  $("picked").innerHTML = PRESETS.filter((p) => picks.has(p.id)).map((p) => `<span class="tag">${esc(p.name)}<button type="button" data-unpick="${p.id}" aria-label="Remove ${esc(p.name)}">×</button></span>`).join("") || `<span class="none">Nothing picked yet</span>`;
+  $("tlabel").textContent = `Picked ${picks.size}`; $("copy").disabled = !picks.size; $("clear").hidden = !picks.size;
+}
+const presetText = (p) => `${p.name} [${p.id}]\n  light: primary ${p.light.primary}, background ${p.light.background}, card ${p.light.card}\n  dark:  primary ${p.dark.primary}, background ${p.dark.background}, card ${p.dark.card}`;
+
+// ---------- Theme page (mock) + colour dialog ----------
+// Everything except the main colour is decided by derive(): see issue cheesecave-admin#23.
+function derive(primary, depth) {
+  const { L, C, h } = toOklch(primary), Ld = Math.max(L, 0.68), bgL = 0.23 - depth * 0.07, cardL = bgL + 0.05;
+  return { light: { primary, background: oklch2hex(0.96, 0.006, h), card: "#ffffff" }, dark: { primary: oklch2hex(Ld, C, h), background: oklch2hex(bgL, 0.01, h), card: oklch2hex(cardL, 0.012, h) } };
+}
+const KEYNAME = { primary_light: ["light", "primary"], background_light: ["light", "background"], card_light: ["light", "card"], primary_dark: ["dark", "primary"], background_dark: ["dark", "background"], card_dark: ["dark", "card"] };
+const FIELDS = [["Light", ["primary_light", "Primary"], ["background_light", "Page background"], ["card_light", "Card"]], ["Dark", ["primary_dark", "Primary"], ["background_dark", "Page background"], ["card_dark", "Card"]]];
+const RECO = [["Blue", "#2563eb"], ["Indigo", "#4f46e5"], ["Violet", "#7c3aed"], ["Purple", "#9333ea"], ["Fuchsia", "#c026d3"], ["Pink", "#db2777"], ["Rose", "#e11d48"], ["Red", "#dc2626"], ["Orange", "#ea580c"], ["Amber", "#d97706"], ["Yellow", "#ca8a04"], ["Lime", "#65a30d"], ["Green", "#16a34a"], ["Teal", "#0d9488"], ["Cyan", "#0891b2"], ["Slate", "#475569"]];
+const flat = (s) => Object.fromEntries(Object.entries(KEYNAME).map(([k, [m, x]]) => [k, s[m][x]]));
+const unflat = (v) => { const r = { light: {}, dark: {} }; for (const [k, [m, x]] of Object.entries(KEYNAME)) r[m][x] = v[k]; return r };
+let saved = flat(derive("#2563eb", 0)), vals = { ...saved };
+
+// the page behind the dialog
+$("fields").innerHTML = FIELDS.map(([mode, ...fs]) => `<div class="fcard"><h4>${mode} mode</h4>${fs.map(([k, label]) => `<div class="fld"><label for="f-${k}">${label}</label><div class="ctl"><input type="color" id="c-${k}" aria-label="${label}, ${mode} mode, colour picker"><input type="text" id="f-${k}" maxlength="7" spellcheck="false"></div></div>`).join("")}</div>`).join("");
+function renderPage() {
+  for (const k of Object.keys(KEYNAME)) { $("c-" + k).value = vals[k]; if (document.activeElement !== $("f-" + k)) $("f-" + k).value = vals[k] }
+  const s = unflat(vals); $("pagePreview").innerHTML = tile("light", s.light) + tile("dark", s.dark);
+  const dirty = Object.keys(vals).some((k) => vals[k] !== saved[k]);
+  $("saveBtn").disabled = !dirty; $("restore").hidden = !dirty; if (dirty) $("dirty").textContent = "Unsaved changes";
+}
+
+// the dialog: state is the main colour in OKLCH plus the dark depth
+const lab = { L: 0.55, C: 0.2, h: 260, depth: 0 };
+const labHex = () => oklch2hex(lab.L, lab.C, lab.h);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+$("matrix").innerHTML = RECO.map(([n, hex]) => `<button type="button" class="sw16" data-reco="${hex}" aria-pressed="false" style="background:${hex};color:${contrastText(hex)};text-shadow:none">${n}</button>`).join("");
+const grad = (stops) => `linear-gradient(90deg, ${stops.join(", ")})`;
+function renderModal() {
+  const brand = labHex(), set = derive(brand, lab.depth / 100), cmax = maxChroma(lab.L, lab.h), vivid = cmax ? Math.round(clamp(lab.C / cmax, 0, 1) * 100) : 0, Cd = Math.max(lab.C, 0.1);
+  const bar = (id, out, v, text, stops, cur) => { const r = $(id); r.value = v; r.style.setProperty("--track", grad(stops)); r.style.setProperty("--cur", cur); r.setAttribute("aria-valuetext", text); $(out).textContent = text };
+  bar("rh", "oh", Math.round(lab.h) % 360, Math.round(lab.h) % 360 + "°", Array.from({ length: 13 }, (_, i) => oklch2hex(lab.L, Cd, i * 30)), brand);
+  bar("rv", "ov", vivid, vivid + "%", [oklch2hex(lab.L, 0, lab.h), oklch2hex(lab.L, 1, lab.h)], brand);
+  bar("rl", "ol", Math.round(lab.L * 100), String(Math.round(lab.L * 100)), Array.from({ length: 9 }, (_, i) => oklch2hex(0.2 + i * 0.0963, lab.C, lab.h)), brand);
+  const soft = derive(brand, 0).dark.background, deep = derive(brand, 1).dark.background;
+  bar("rd", "od", lab.depth, lab.depth + "%", [soft, deep], set.dark.background);
+  $("cur").style.background = brand; if (document.activeElement !== $("mhex")) { $("mhex").value = brand; $("mhex").setAttribute("aria-invalid", "false") }
+  document.querySelectorAll(".sw16").forEach((b) => b.setAttribute("aria-pressed", dE(brand, b.dataset.reco) < 0.012));
+  if (live) { vals = flat(set); renderPage() }
+  const weak = ["light", "dark"].filter((m) => ratio(set[m].primary, set[m].card) < 3);
+  $("mstatus").className = "note" + (weak.length ? " warn" : "");
+  $("mstatus").textContent = weak.length ? `This colour is pale on the card in ${weak.join(" and ")} mode, so the site darkens link text a little.` : "Fills all six fields; you can still edit each one afterwards.";
+  $("mhint").textContent = lab.C > cmax + 0.002 ? "Too vivid for this lightness; shown at the closest colour." : "";
+}
+const darkDepthFrom = (bg) => Math.round(clamp((0.23 - toOklch(bg).L) / 0.07, 0, 1) * 100);
+function setFromHex(hex) { const o = toOklch(hex); lab.L = o.L; lab.C = o.C; lab.h = o.h; renderModal() }
+let live = false, before = null;
+function openDialog() {
+  live = false; before = { ...vals };
+  setFromHex(vals.primary_light);
+  lab.depth = darkDepthFrom(vals.background_dark);
+  renderModal(); $("qpanel").hidden = false; $("openQuick").setAttribute("aria-expanded", "true");
+}
+function closePanel() { $("qpanel").hidden = true; $("openQuick").setAttribute("aria-expanded", "false"); $("openQuick").focus() }
+const draftText = () => { const v = flat(derive(labHex(), lab.depth / 100)); return Object.keys(v).map((k) => `${k}: ${v[k]}`).join("\n") };
+
+// ---------- events ----------
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
+  if (t.classList.contains("tab")) { const ad = t.id === "t-admin"; $("t-admin").setAttribute("aria-selected", ad); $("t-presets").setAttribute("aria-selected", !ad); $("tab-admin").hidden = !ad; $("tab-presets").hidden = ad; $("tray").hidden = ad; return }
+  if (t.dataset.f) { family = t.dataset.f; renderPresets() }
+  else if (t.dataset.pick) { picks.has(t.dataset.pick) ? picks.delete(t.dataset.pick) : picks.add(t.dataset.pick); savePicks(); renderPresets() }
+  else if (t.dataset.unpick) { picks.delete(t.dataset.unpick); savePicks(); renderPresets() }
+  else if (t.dataset.copy) { const p = PRESETS.find((x) => x.id === t.dataset.copy); copyText(presetText(p), p.name) }
+  else if (t.id === "copy") copyText(`Picked presets (${picks.size}):\n` + PRESETS.filter((p) => picks.has(p.id)).map(presetText).join("\n"), "Picks")
+  else if (t.id === "clear") { picks.clear(); savePicks(); renderPresets() }
+  else if (t.id === "openQuick") { $("qpanel").hidden ? openDialog() : closePanel() }
+  else if (t.id === "mclose") closePanel()
+  else if (t.id === "qrevert") { vals = { ...before }; renderPage(); live = false; setFromHex(vals.primary_light); lab.depth = darkDepthFrom(vals.background_dark); renderModal() }
+  else if (t.dataset.reco) { live = true; setFromHex(t.dataset.reco) }
+  else if (t.id === "saveBtn") { saved = { ...vals }; renderPage(); $("dirty").textContent = "Saved (demo: nothing is sent anywhere)" }
+  else if (t.id === "restore") { vals = { ...saved }; renderPage() }
+});
+document.addEventListener("input", (e) => { const i = e.target; if (/^(rh|rv|rl|rd|mhex)$/.test(i.id)) live = true;
+  if (i.id === "rh") { lab.h = +i.value; renderModal() }
+  else if (i.id === "rv") { lab.C = (+i.value / 100) * maxChroma(lab.L, lab.h); renderModal() }
+  else if (i.id === "rl") { lab.L = +i.value / 100; renderModal() }
+  else if (i.id === "rd") { lab.depth = +i.value; renderModal() }
+  else if (i.id === "mhex") { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) setFromHex(v) }
+  else if (i.id.startsWith("c-")) { vals[i.id.slice(2)] = i.value.toLowerCase(); renderPage() }
+  else if (i.id.startsWith("f-")) { const v = i.value.trim(); i.setAttribute("aria-invalid", !validHex(v)); if (validHex(v)) { vals[i.id.slice(2)] = v.toLowerCase(); renderPage() } } });
+renderPage(); renderPresets(); $("tray").hidden = true;
+
+</script>
